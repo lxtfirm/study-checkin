@@ -146,14 +146,15 @@
           </div>
           <details class="focus-reminder">
             <summary>iPhone 锁屏提醒</summary>
-            <p class="hint">把剩余时间交给 iPhone 的「时钟」，锁屏或关闭网页后也能继续倒计时。</p>
+            <label class="clock-auto"><input id="focus-clock-auto" type="checkbox"> 开始专注时同时启动 iPhone 时钟</label>
+            <p class="hint">时钟接收网页设置的时长，锁屏或关闭网页后也会继续倒计时。</p>
             <ol class="clock-setup">
-              <li>在「快捷指令」新建 <strong>考研专注提醒</strong>。</li>
-              <li>添加「开始计时器」动作，时长选变量「快捷指令输入」，单位设为「秒」。</li>
-              <li>回到这里点「用 iPhone 时钟提醒」，再确认「时钟」里已经开始计时。</li>
+              <li>编辑快捷指令 <strong>考研专注提醒</strong>，使用「时钟」里的「开始计时器」动作。</li>
+              <li>时长选变量「快捷指令输入」，单位设为「秒」。如果有「打开计时器」或「请求输入」动作，移除它们。</li>
+              <li>勾选上方选项，回到专注页点「开始专注」。首次使用可设 1 分钟，确认 iPhone 已经开始倒数。</li>
             </ol>
-            <button class="btn secondary" id="focus-clock-reminder" type="button">用 iPhone 时钟提醒</button>
-            <p class="hint">每次点按会运行快捷指令。网页暂停或提前结束时，可在「时钟」里调整已启动的计时器。</p>
+            <button class="btn secondary" id="focus-clock-reminder" type="button">把当前剩余时间交给时钟</button>
+            <p class="hint" id="focus-clock-status">每次交给时钟都会新建一个计时器。暂停或提前结束时，请在「时钟」里同步调整。</p>
           </details>
         </section>
         <section class="panel" id="history" data-view="history" hidden aria-labelledby="history-title">

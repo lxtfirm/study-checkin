@@ -13,6 +13,8 @@ const durationPresets = document.querySelectorAll('[data-focus-minutes]');
 const notificationButton = byId('focus-notifications');
 const notificationStatus = byId('focus-notification-status');
 const clockReminder = byId('focus-clock-reminder');
+const clockAuto = byId('focus-clock-auto');
+const clockAutoKey = `${storageKey}:clock-auto`;
 const completionAlert = byId('focus-alert');
 const supportsNotifications = 'Notification' in window && 'serviceWorker' in navigator;
 const validDuration = minutes => validNumber(minutes) && minutes > 0 && Number.isSafeInteger(minutes * 60000 + Date.now());
@@ -21,6 +23,24 @@ function clockShortcutUrl(remaining) {
   const name = encodeURIComponent('考研专注提醒');
   return `shortcuts://run-shortcut?name=${name}&input=text&text=${Math.ceil(remaining / 1000)}`;
 }
+
+function launchClockReminder(timer) {
+  const remaining = remainingTime(timer);
+  if (remaining > 0) location.assign(clockShortcutUrl(remaining));
+  else renderTimer(true);
+}
+
+try {
+  clockAuto.checked = localStorage.getItem(clockAutoKey) === 'true';
+} catch { /* The option can still be used during this visit. */ }
+
+clockAuto.addEventListener('change', () => {
+  try {
+    localStorage.setItem(clockAutoKey, String(clockAuto.checked));
+  } catch {
+    byId('focus-clock-status').textContent = '本次可以使用，浏览器未能保存这个选项。';
+  }
+});
 
 function renderNotificationSettings() {
   const permission = supportsNotifications ? Notification.permission : 'unavailable';
@@ -147,7 +167,7 @@ function renderTimer(retry = false) {
   byId('focus-badge').textContent = status;
   focusToggle.textContent = timer ? (timer.ends === null ? '继续专注' : '暂停') : '开始专注';
   focusToggle.disabled = !!timer && remaining === 0;
-  clockReminder.disabled = !!timer && (timer.ends === null || remaining === 0);
+  clockReminder.disabled = !timer || timer.ends === null || remaining === 0;
   taskSelect.disabled = durationInput.disabled = !!timer;
   for (const preset of durationPresets) preset.disabled = !!timer;
   focusFinish.hidden = !timer;
@@ -179,23 +199,22 @@ function toggleFocus(allowStart) {
     }
     completionAlert.hidden = true;
     const remaining = minutes * 60000;
-    if (!writeTimer({ id: crypto.randomUUID(), date: today, task: taskSelect.value, minutes, remaining, ends: Date.now() + remaining })) return;
+    const started = { id: crypto.randomUUID(), date: today, task: taskSelect.value, minutes, remaining, ends: Date.now() + remaining };
+    if (!writeTimer(started)) return;
+    renderTimer();
+    return started;
   }
   renderTimer();
 }
 
-focusToggle.addEventListener('click', () => toggleFocus(true));
+focusToggle.addEventListener('click', () => {
+  const started = toggleFocus(true);
+  if (started && clockAuto.checked) launchClockReminder(started);
+});
 miniToggle.addEventListener('click', () => toggleFocus(false));
 clockReminder.addEventListener('click', () => {
-  let timer = readTimer();
-  if (!timer) {
-    toggleFocus(true);
-    timer = readTimer();
-  }
-  if (!timer || timer.ends === null) return;
-  const remaining = remainingTime(timer);
-  if (remaining > 0) location.assign(clockShortcutUrl(remaining));
-  else renderTimer(true);
+  const timer = readTimer();
+  if (timer && timer.ends !== null) launchClockReminder(timer);
 });
 
 focusFinish.addEventListener('click', () => {
