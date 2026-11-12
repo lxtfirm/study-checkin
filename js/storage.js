@@ -4,15 +4,17 @@ const storageKey = `study-checkin:v1:${new URL('./', location.href).pathname}`;
 const backupFormat = 'study-checkin';
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const validNumber = value => Number.isSafeInteger(value) && value >= 0;
+const validTitle = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 80;
+const validTime = value => typeof value === 'string' && (value === '' || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value));
 
 function validateDay(day) {
   if (!isObject(day)) throw new Error('日期记录必须是对象。');
   const result = {};
   for (const [field, value] of Object.entries(day)) {
-    if (field === 'mode' && (value === 'lecture' || value === 'practice')) {
+    if (field === 'mode' && ['lecture', 'practice', 'custom'].includes(value)) {
       result.mode = value;
     } else if (field === 'checked' && isObject(value) &&
-      Object.entries(value).every(([id, checked]) => taskIds.has(id) && typeof checked === 'boolean')) {
+      Object.entries(value).every(([id, checked]) => validTaskId(id) && typeof checked === 'boolean')) {
       result.checked = { ...value };
     } else if (textFields.includes(field) && typeof value === 'string') {
       result[field] = value;
@@ -20,8 +22,15 @@ function validateDay(day) {
       result[field] = value;
     } else if (field === 'course' && validNumber(value) && value <= 30) {
       result.course = value;
+    } else if (field === 'tasks' && isObject(value) && Object.entries(value).every(([id, task]) =>
+      id.startsWith('t-') && validTaskId(id) && isObject(task) && validTitle(task.name) && validTime(task.time))) {
+      result.tasks = Object.fromEntries(Object.entries(value).map(([id, { name, time }]) => [id, { name, time }]));
+    } else if (field === 'courses' && isObject(value) && Object.entries(value).every(([id, course]) =>
+      customId(id) && (course === null || (isObject(course) && validTitle(course.name) &&
+        validNumber(course.total) && course.total > 0 && course.total <= 9999 && validNumber(course.done) && course.done <= course.total)))) {
+      result.courses = Object.fromEntries(Object.entries(value).map(([id, course]) => [id, course && { name: course.name, total: course.total, done: course.done }]));
     } else if (field === 'focus' && isObject(value) && Object.entries(value).every(([id, session]) =>
-      /^[\da-f-]{36}$/.test(id) && isObject(session) && taskIds.has(session.task) &&
+      /^[\da-f-]{36}$/.test(id) && isObject(session) && validTaskId(session.task) &&
       validNumber(session.seconds) && session.seconds > 0)) {
       result.focus = Object.fromEntries(Object.entries(value).map(([id, { task, seconds }]) => [id, { task, seconds }]));
     } else {

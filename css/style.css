@@ -121,7 +121,7 @@ main { min-width: 0; }
 .section { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 24px 0 10px; }
 .section h2, .panel h2 { font-size: 20px; line-height: 1.35; }
 .section > span { font-size: 12px; color: var(--muted); }
-.modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 4px; gap: 4px; border-radius: 15px; background: var(--soft); }
+.modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 4px; gap: 4px; border-radius: 15px; background: var(--soft); }
 .mode { min-height: 44px; padding: 7px; border: 1px solid transparent; border-radius: 11px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 700; }
 .mode[aria-pressed="true"] { background: var(--surface); color: var(--blue); border-color: var(--edge); box-shadow: var(--shadow); }
 .plan > .hint { margin: 8px 1px 16px; }
@@ -313,6 +313,29 @@ body:has(.study-dock[data-section="focus"]) { --mini-height: 0px; }
 .focus-mini-time { flex: none; font: 700 13px ui-monospace, "SF Mono", Menlo, monospace; }
 .focus-mini-arrow { color: var(--ink); font-size: 20px; }
 .focus-mini-toggle { flex: none; min-width: 52px; min-height: 44px; padding: 3px 8px; border: 0; border-radius: 999px; background: var(--glass-selected); color: var(--ink); font-size: 12px; font-weight: 700; }
+
+.cover.has-cover-image { background-image: var(--cover-image); background-size: cover; background-position: center; }
+.cover.has-cover-image .cover-art { visibility: hidden; }
+.cover.has-cover-image::after { background: linear-gradient(95deg, #edf4ffdc, #edf4ff91); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.cover-settings { margin: 0 clamp(20px, 4vw, 40px) 16px; }
+.cover-settings summary, .custom-course-editor summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: 13px; font-weight: 700; color: inherit; }
+.cover-settings-body { padding: 10px; border-radius: 14px; background: var(--surface); color: var(--ink); }
+.cover-settings input { width: 100%; min-height: 44px; max-width: 100%; font-size: 16px; }
+.editor { display: grid; gap: 8px; min-width: 0; margin: 8px 0 12px; }
+.editor label { min-width: 0; color: var(--muted); font-size: 13px; font-weight: 650; }
+.editor input { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 6px 9px; border: 1px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.editor .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.custom-course { margin: 12px 0; padding: 12px; border: 1px solid var(--edge); border-radius: 14px; background: var(--soft); }
+.custom-course-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.custom-course-heading strong, .task strong, .editor .hint { min-width: 0; overflow-wrap: anywhere; }
+.custom-course-heading span { flex: none; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+.custom-course progress { width: 100%; accent-color: var(--blue); }
+.task-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.task-actions button { min-height: 44px; padding: 5px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--blue); font-size: 13px; font-weight: 650; }
+@media (prefers-color-scheme: dark) {
+  .cover.has-cover-image::after { background: linear-gradient(95deg, #142238ec, #142238a8); }
+}
 #records { margin-top: 19px; }
 #records summary { min-height: 44px; padding: 12px 15px; border-radius: 14px; background: var(--surface); border: 1px solid var(--edge); color: var(--blue); font-weight: 650; cursor: pointer; }
 .clock { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }

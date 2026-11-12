@@ -1,13 +1,25 @@
 // Bump the version whenever a cached app file changes.
-const version = 'v11';
+const version = 'v12';
 const base = self.registration.scope;
 const prefix = `study-checkin:${base}:`;
 const cacheName = prefix + version;
 const home = new URL('./index.html', base).href;
 const shell = [
   './index.html', './css/style.css', './js/schedule.js', './js/storage.js', './js/app.js', './js/focus.js',
+  './js/customize.js', './js/push.js',
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './fonts/poem.woff2',
 ].map(path => new URL(path, base).href);
+
+self.addEventListener('push', event => {
+  let payload;
+  try { payload = event.data?.json(); } catch { return; }
+  if (payload?.type !== 'focus-ended' || !/^[\da-f-]{36}$/.test(payload.id)) return;
+  event.waitUntil(self.registration.showNotification('专注计时结束', {
+    body: '本轮专注已完成，打开考研打卡查看记录。',
+    tag: `study-focus-${payload.id}`,
+    icon: new URL('./icons/icon-192.png', base).href,
+  }));
+});
 
 self.addEventListener('notificationclick', event => {
   if (!event.notification.tag.startsWith('study-focus-')) return;

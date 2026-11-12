@@ -30,14 +30,19 @@ const review = [
 ];
 
 const taskIds = new Set([...lecture, ...practice, ...english, ...review].map(([id]) => id).filter(Boolean));
-const modeOf = day => day?.mode === 'practice' ? 'practice' : 'lecture';
+const customId = id => typeof id === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(id);
+const validTaskId = id => taskIds.has(id) || (typeof id === 'string' && id.startsWith('t-') && customId(id.slice(2)));
+const modeOf = day => day?.mode || 'lecture';
 const mathTasks = day => modeOf(day) === 'practice' ? practice : lecture;
-const studyTasks = day => [...mathTasks(day), ...english, ...review].filter(([id]) => id);
+const customTasks = day => Object.entries(day?.tasks || {})
+  .sort(([, a], [, b]) => (a.time || '24:00').localeCompare(b.time || '24:00'))
+  .map(([id, task]) => [id, task.time, task.name, '']);
+const studyTasks = day => modeOf(day) === 'custom' ? customTasks(day) : [...mathTasks(day), ...english, ...review].filter(([id]) => id);
 
 function completion(day) {
   const tasks = studyTasks(day);
   const done = tasks.filter(([id]) => day?.checked?.[id]).length;
-  return { done, total: tasks.length, percent: Math.round(done / tasks.length * 100) };
+  return { done, total: tasks.length, percent: tasks.length ? Math.round(done / tasks.length * 100) : 0 };
 }
 
 function localDay(date = new Date()) {

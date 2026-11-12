@@ -1,0 +1,8 @@
+{
+  "name": "study-checkin-push",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "test": "node --test" },
+  "engines": { "node": ">=24" },
+  "dependencies": { "web-push": "3.6.7" }
+}

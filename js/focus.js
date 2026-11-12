@@ -60,6 +60,11 @@ clockSetting.addEventListener('click', () => {
 });
 
 function renderNotificationSettings() {
+  if (canUsePush()) {
+    notificationButton.hidden = true;
+    notificationStatus.textContent = '锁屏推送已连接。每次开始专注时会自动安排提醒。';
+    return;
+  }
   const permission = supportsNotifications ? Notification.permission : 'unavailable';
   notificationButton.hidden = permission !== 'default';
   notificationStatus.textContent = {
@@ -87,6 +92,7 @@ async function remindCompletion(timer, taskName) {
   const message = `${taskName} · ${timer.minutes} 分钟专注结束`;
   completionAlert.hidden = false;
   byId('focus-alert-message').textContent = message;
+  if (timer.pushRevision && timer.pushScheduled) return;
   if (!supportsNotifications || Notification.permission !== 'granted') return;
   try {
     const registration = await navigator.serviceWorker.getRegistration();
@@ -101,7 +107,7 @@ async function remindCompletion(timer, taskName) {
 function readTimer() {
   try {
     const timer = JSON.parse(localStorage.getItem(timerKey));
-    if (timer && /^[\da-f-]{36}$/.test(timer.id) && validDay(timer.date) && taskIds.has(timer.task) &&
+    if (timer && /^[\da-f-]{36}$/.test(timer.id) && validDay(timer.date) && validTaskId(timer.task) &&
       validDuration(timer.minutes) && validNumber(timer.remaining) && timer.remaining <= timer.minutes * 60000 &&
       (timer.ends === null || validNumber(timer.ends))) return timer;
   } catch { /* The timer starts idle if its state cannot be read. */ }
@@ -127,7 +133,7 @@ function refreshFocusOptions(timer) {
   const tasks = focusTasks();
   if (timer && !tasks.some(([id]) => id === timer.task)) {
     const task = [...lecture, ...practice, ...english, ...review].find(([id]) => id === timer.task);
-    tasks.push(task);
+    tasks.push(task || [timer.task, '', timer.taskName || '自定义任务']);
   }
   taskSelect.replaceChildren(...tasks.map(([id, , name]) => new Option(name, id)));
   const selected = timer?.task || previous;
@@ -156,6 +162,7 @@ function pendingTask() {
 
 let observedTimer;
 let failedTimer;
+let pushBusy = false;
 
 function renderTimer(retry = false) {
   let timer = readTimer();
@@ -168,7 +175,7 @@ function renderTimer(retry = false) {
     failedTimer = null;
     if (timer) focusStatus.textContent = timer.ends === null ? '已暂停，随时可以继续。' : `正在专注：${taskSelect.selectedOptions[0].textContent}`;
   }
-  if (timer && remaining === 0 && (retry || failedTimer !== timer.id)) {
+  if (timer && remaining === 0 && !pushBusy && (retry || failedTimer !== timer.id)) {
     const taskName = taskSelect.selectedOptions[0].textContent;
     if (saveSession(timer, remaining)) {
       remindCompletion(timer, taskName);
@@ -184,7 +191,8 @@ function renderTimer(retry = false) {
   byId('focus-clock').textContent = time;
   byId('focus-badge').textContent = status;
   focusToggle.textContent = timer ? (timer.ends === null ? '继续专注' : '暂停') : '开始专注';
-  focusToggle.disabled = !!timer && remaining === 0;
+  focusToggle.disabled = miniToggle.disabled = pushBusy || (!!timer && remaining === 0);
+  focusFinish.disabled = pushBusy;
   taskSelect.disabled = durationInput.disabled = !!timer;
   for (const preset of durationPresets) preset.disabled = !!timer;
   focusFinish.hidden = !timer;
@@ -199,13 +207,42 @@ function renderTimer(retry = false) {
   miniToggle.setAttribute('aria-label', `${miniToggle.textContent}专注`);
 }
 
+async function changePushTimer(timer, action) {
+  const remaining = remainingTime(timer);
+  const dueAt = action === 'start' ? timer.ends : action === 'resume' ? Date.now() + remaining : null;
+  const revision = timer.pushRevision + (action === 'start' ? 0 : 1);
+  pushBusy = true;
+  renderTimer();
+  pushMessage(dueAt === null ? '正在撤销锁屏提醒…' : '正在安排锁屏提醒…');
+  try {
+    const result = await updatePushTimer(timer, revision, dueAt);
+    const currentTimer = readTimer();
+    if (currentTimer?.id !== timer.id || currentTimer.pushRevision !== timer.pushRevision) return;
+    if (action === 'finish') saveSession(timer, remaining);
+    else writeTimer({ ...timer, remaining, ends: result.dueAt, pushRevision: revision, pushScheduled: dueAt !== null });
+    pushMessage(result.alreadySent ? '提醒已交给系统，无法收回。' :
+      dueAt === null ? '' : '锁屏提醒已安排。');
+  } catch {
+    pushMessage(dueAt === null ? '未确认撤销，原提醒可能仍会送达。请联网重试。' :
+      '未确认锁屏提醒，请检查网络。网页内计时仍可使用。');
+  } finally {
+    pushBusy = false;
+    renderTimer();
+  }
+}
+
 function toggleFocus(allowStart) {
+  if (pushBusy) return;
   checkDate();
   const timer = readTimer();
   if (timer) {
     const remaining = remainingTime(timer);
     if (!remaining) return renderTimer(true);
     const resuming = timer.ends === null;
+    if (timer.pushRevision) {
+      changePushTimer(timer, resuming ? 'resume' : 'pause');
+      return;
+    }
     if (!writeTimer({ ...timer, remaining, ends: resuming ? Date.now() + remaining : null })) return;
     renderTimer();
     if (usesClockReminder(timer)) {
@@ -213,6 +250,10 @@ function toggleFocus(allowStart) {
     }
   } else {
     if (!allowStart) return;
+    if (!taskSelect.value) {
+      focusStatus.textContent = '请先在每日任务中添加一项任务。';
+      return;
+    }
     const minutes = durationInput.valueAsNumber;
     if (!validDuration(minutes)) {
       focusStatus.textContent = '请输入有效的分钟数，至少 1 分钟，使用整数。';
@@ -221,12 +262,17 @@ function toggleFocus(allowStart) {
     }
     completionAlert.hidden = true;
     const remaining = minutes * 60000;
+    const usePush = canUsePush();
     const started = {
       id: crypto.randomUUID(), date: today, task: taskSelect.value, minutes, remaining,
-      ends: Date.now() + remaining, clockRequested: clockAuto,
+      taskName: taskSelect.selectedOptions[0].textContent,
+      ends: Date.now() + remaining, clockRequested: !usePush && clockAuto,
+      ...(usePush ? { pushRevision: 1 } : {}),
     };
     if (!writeTimer(started)) return;
     renderTimer();
+    if (usePush) changePushTimer(started, 'start');
+    else pushMessage('');
     return started;
   }
 }
@@ -238,10 +284,12 @@ focusToggle.addEventListener('click', () => {
 miniToggle.addEventListener('click', () => toggleFocus(false));
 
 focusFinish.addEventListener('click', () => {
+  if (pushBusy) return;
   const timer = readTimer();
   if (!timer) return;
   const remaining = remainingTime(timer);
   if (remaining === 0) return renderTimer(true);
+  if (timer.pushRevision) return changePushTimer(timer, 'finish');
   if (saveSession(timer, remaining)) {
     renderTimer();
     if (usesClockReminder(timer)) toast('专注已记录，请在 iPhone 时钟停止对应计时器。');

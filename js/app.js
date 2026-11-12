@@ -138,26 +138,30 @@ function renderProgress(day) {
   byId('status').textContent = percent === 100 ? '全部完成' : done ? '学习进行中' : '准备开始';
 }
 
+const escapeHtml = value => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+
 function taskSection(title, number, tasks, day) {
-  // Task text and IDs are defined by schedule.js. Only booleans come from saved data.
   const items = tasks.map(([id, time, name, description]) => {
     if (!id) return `<li class="rest"><span class="time">${time}</span><span>${name}</span></li>`;
     const checked = day.checked?.[id] ? 'checked' : '';
     return `<li><label class="task">
       <input type="checkbox" data-task="${id}" aria-labelledby="task-${id}" ${checked}>
       <span class="check" aria-hidden="true">✓</span>
-      <span class="taskbody"><span class="taskname" id="task-${id}">${name}</span><span class="taskdesc">${description}</span></span>
+      <span class="taskbody"><span class="taskname" id="task-${id}">${escapeHtml(name)}</span>${description ? `<span class="taskdesc">${description}</span>` : ''}</span>
       <span class="time">${time}</span>
-    </label></li>`;
+    </label>${number ? '' : `<div class="task-actions"><button type="button" data-edit-task="${id}" aria-label="编辑 ${escapeHtml(name)}">编辑</button><button type="button" data-delete-task="${id}" aria-label="删除 ${escapeHtml(name)}">删除</button></div>`}</li>`;
   });
-  return `<section class="task-group"><h3><span>${number}</span>${title}</h3><ol>${items.join('')}</ol></section>`;
+  return `<section class="task-group"><h3>${number ? `<span>${number}</span>` : ''}${title}</h3><ol>${items.join('')}</ol></section>`;
 }
 
 function renderPlan(day) {
   const mode = modeOf(day);
   for (const button of modeButtons) button.setAttribute('aria-pressed', button.dataset.mode === mode);
-  byId('mode-hint').textContent = mode === 'lecture' ? '理解新知识，复现例题，少量练习。' : '回顾已学知识，独立做题，整理错题。';
-  list.innerHTML = taskSection('下午 · 高数', '01', mathTasks(day), day) +
+  byId('mode-hint').textContent = { lecture: '理解新知识，复现例题，少量练习。', practice: '回顾已学知识，独立做题，整理错题。', custom: '为所选日期安排任务。' }[mode];
+  byId('task-editor').hidden = mode !== 'custom';
+  byId('progress-mode').textContent = mode === 'custom' ? '自定义计划' : '数学 · 英语一';
+  byId('plan-window').textContent = mode === 'custom' ? '按你的节奏' : '14:30–22:30';
+  list.innerHTML = mode === 'custom' ? taskSection('自定义任务', '', customTasks(day), day) : taskSection('下午 · 高数', '01', mathTasks(day), day) +
     taskSection('晚上 · 英语一', '02', english, day) + taskSection('晚间 · 复盘与收尾', '03', review, day);
   document.dispatchEvent(new Event('study-plan-change'));
 }
@@ -199,6 +203,7 @@ function renderCourse() {
   byId('course-progress').value = count;
   byId('course-input').value = count;
   byId('course-next').textContent = count === 30 ? '已完成全部课程，可以开始系统复习。' : `下一讲 · 第 ${count + 1} 讲`;
+  document.dispatchEvent(new Event('study-course-change'));
 }
 
 byId('course-form').addEventListener('submit', event => {
@@ -340,7 +345,7 @@ byId('share').addEventListener('click', async () => {
   const notes = [day.mathnote, day.engnote, day.summary, day.tomorrow];
   const labels = ['高数记录', '英语记录', '当日总结', '次日计划'];
   const title = `考研打卡 · ${current}`;
-  const text = [title, modeOf(day) === 'practice' ? '巩固日' : '网课日', ...tasks, '',
+  const text = [title, { lecture: '网课日', practice: '巩固日', custom: '自定义' }[modeOf(day)], ...tasks, '',
     ...notes.map((note, i) => `${labels[i]}：${note || '—'}`)].join('\n');
   try {
     if (navigator.share) {

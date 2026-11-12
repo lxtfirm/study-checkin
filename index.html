@@ -17,6 +17,8 @@
   <script defer src="./js/schedule.js"></script>
   <script defer src="./js/storage.js"></script>
   <script defer src="./js/app.js"></script>
+  <script defer src="./js/customize.js"></script>
+  <script defer src="./js/push.js"></script>
   <script defer src="./js/focus.js"></script>
 </head>
 <body>
@@ -50,6 +52,15 @@
           <cite id="poem-source"></cite>
         </figure>
       </div>
+      <details class="cover-settings">
+        <summary>封面背景</summary>
+        <div class="cover-settings-body">
+          <label for="cover-image">选择背景图片</label>
+          <input id="cover-image" type="file" accept="image/*">
+          <button class="btn secondary" type="button" id="cover-reset" hidden>恢复默认</button>
+          <p class="hint" id="cover-status" role="status"></p>
+        </div>
+      </details>
     </section>
     <details class="exam-countdown" data-view="tasks" id="exam-countdown">
       <summary>
@@ -98,15 +109,21 @@
           </div>
           <p id="progress" class="progress-number" aria-hidden="true">0%</p>
           <div class="bar" id="progress-track" role="progressbar" aria-labelledby="progress-title" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bar"></div></div>
-          <div class="herofoot"><span id="count"></span><span>数学 · 英语一</span></div>
+          <div class="herofoot"><span id="count"></span><span id="progress-mode">数学 · 英语一</span></div>
         </section>
         <section class="plan" aria-labelledby="plan-title">
-          <div class="section"><h2 id="plan-title">任务清单</h2><span>14:30–22:30</span></div>
+          <div class="section"><h2 id="plan-title">任务清单</h2><span id="plan-window">14:30–22:30</span></div>
           <div class="modes" role="group" aria-label="学习模式">
             <button type="button" class="mode" data-mode="lecture" aria-pressed="true">网课日</button>
             <button type="button" class="mode" data-mode="practice" aria-pressed="false">巩固日</button>
+            <button type="button" class="mode" data-mode="custom" aria-pressed="false">自定义</button>
           </div>
           <p class="hint" id="mode-hint"></p>
+          <form class="editor" id="task-editor" hidden>
+            <label for="task-name">任务名称</label><input id="task-name" maxlength="80" required>
+            <label for="task-time">开始时间（可选）</label><input id="task-time" type="time">
+            <div class="actions"><button class="btn" id="task-submit">添加任务</button><button class="btn secondary" id="task-cancel" type="button" hidden>取消编辑</button></div>
+          </form>
           <div id="list"></div>
         </section>
       </div>
@@ -121,6 +138,20 @@
             <input id="course-input" type="number" inputmode="numeric" min="0" max="30" step="1" required>
             <button type="submit" class="btn secondary">保存</button>
           </form>
+          <div class="section"><h3>自定义课程</h3></div>
+          <div id="custom-courses"></div>
+          <details class="custom-course-editor" id="course-editor-details">
+            <summary>添加或编辑课程</summary>
+            <form class="editor" id="custom-course-form">
+              <label for="custom-course-name">课程名称</label><input id="custom-course-name" maxlength="80" required>
+              <div class="editor-pair">
+                <label>总课时<input id="custom-course-total" type="number" min="1" max="9999" inputmode="numeric" required></label>
+                <label>已完成<input id="custom-course-done" type="number" min="0" max="9999" value="0" inputmode="numeric" required></label>
+              </div>
+              <div class="actions"><button class="btn" id="custom-course-submit">添加课程</button><button class="btn secondary" id="custom-course-cancel" type="button" hidden>取消编辑</button></div>
+              <p class="hint" id="custom-course-message" role="status"></p>
+            </form>
+          </details>
         </section>
         <section class="panel focus-panel" id="focus" data-view="focus" hidden aria-labelledby="focus-title">
           <div class="panel-title"><h2 id="focus-title" tabindex="-1">专注计时</h2><span class="badge" id="focus-badge">今天</span></div>
@@ -141,8 +172,14 @@
             <button class="btn secondary" id="focus-check" type="button" hidden>勾选关联任务</button>
           </div>
           <p class="hint focus-clock-mode" id="focus-clock-mode" hidden>开始专注时启动 iPhone 时钟，到点由时钟提醒。</p>
+          <p class="hint" id="push-state" role="status" hidden></p>
           <details class="focus-reminder" id="focus-reminder-settings">
             <summary>提醒设置</summary>
+            <form class="editor" id="push-setup" hidden>
+              <label for="push-code">后台推送连接码</label><input id="push-code" type="password" autocomplete="off" required>
+              <button class="btn secondary">连接并开启锁屏推送</button>
+            </form>
+            <p class="hint" id="push-setup-status"></p>
             <div id="focus-clock-setup">
               <p class="hint">在「快捷指令」中创建「考研专注提醒」，添加「开始计时器」，时长选「快捷指令输入」，单位选「秒」。</p>
             </div>
