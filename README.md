@@ -4,7 +4,7 @@
 
 ## 每日使用
 
-首页的诗句按本地日期轮换。用顶部导航在每日任务、课程进度、专注计时和学习统计之间跳转。
+首页的诗句按本地日期轮换。用底部导航切换每日任务、课程进度、专注计时和学习统计。学习笔记和每日复盘可以在任务页底部展开。
 
 「课程进度」记录《基础30讲》累计已学讲数，选中某天时显示截至该日最近一次保存的进度。专注计时可关联今天的任务，支持 15、25 或 45 分钟，可以暂停、继续和提前结束。计时到点或提前结束后，实际专注时长会计入开始当天的统计。结束后可手动勾选关联任务。浏览器在后台休眠时，回来后会校正倒计时。
 
@@ -25,7 +25,7 @@
 ## 发布到 GitHub Pages
 
 1. 用 GitHub Free 创建公开仓库，例如 `study-checkin`。
-2. 将 `index.html`、`css/`、`js/`、`icons/`、`manifest.webmanifest`、`sw.js`、`.nojekyll` 和 `README.md` 放到仓库 `main` 分支根目录，保留原目录结构。可以用仓库页面的 **Add file → Upload files** 上传并提交。个人 JSON 备份应保存在私人目录。
+2. 将 `index.html`、`css/`、`js/`、`icons/`、`fonts/`、`manifest.webmanifest`、`sw.js`、`.nojekyll` 和 `README.md` 放到仓库 `main` 分支根目录，保留原目录结构。可以用仓库页面的 **Add file → Upload files** 上传并提交。个人 JSON 备份应保存在私人目录。
 3. 打开仓库 **Settings → Pages**。在 **Build and deployment** 中将 **Source** 设为 **Deploy from a branch**，选择 **main** 和 **/(root)**，保存。
 4. 构建完成后，在 **Settings → Pages** 打开站点地址。普通项目仓库的地址形如 `https://你的用户名.github.io/study-checkin/`。使用 HTTPS 地址访问和安装。
 

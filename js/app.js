@@ -11,6 +11,35 @@ let current = today;
 let days = {};
 let toastTimeout;
 
+const routes = [...document.querySelectorAll('[data-route]')];
+const views = [...document.querySelectorAll('[data-view]')];
+
+function renderRoute() {
+  const hash = location.hash.slice(1);
+  const route = routes.some(link => link.dataset.route === hash) ? hash : 'tasks';
+  for (const view of views) view.hidden = view.dataset.view !== route;
+  for (const link of routes) {
+    if (link.dataset.route === route) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  byId('daynav').hidden = route !== 'tasks' && route !== 'course';
+}
+
+function openView(route) {
+  if (location.hash !== `#${route}`) history.pushState(null, '', `#${route}`);
+  renderRoute();
+  window.scrollTo(0, 0);
+}
+
+for (const link of routes) {
+  link.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    openView(link.dataset.route);
+  });
+}
+window.addEventListener('hashchange', renderRoute);
+
 function toast(message) {
   const node = byId('toast');
   node.textContent = message;
@@ -149,6 +178,9 @@ function render() {
   byId('progress-title').textContent = isToday ? '今日学习进度' : '当日学习进度';
   dateField.max = '9999-12-31';
   dateField.value = current;
+  const dateDisplay = byId('date-display');
+  dateDisplay.dateTime = current;
+  dateDisplay.textContent = current.replaceAll('-', '.');
   byId('prev').disabled = current === dateField.min;
   byId('next').disabled = current === dateField.max;
   renderProgress(day);
@@ -177,6 +209,7 @@ byId('next').addEventListener('click', () => selectDay(moveDay(current, 1)));
 byId('today').addEventListener('click', () => selectDay(today));
 dateField.addEventListener('change', () => selectDay(dateField.value));
 byId('pick-date').addEventListener('click', () => {
+  openView('tasks');
   scrollToDate();
   try { dateField.showPicker?.(); } catch { /* The focused date input remains usable. */ }
 });
@@ -184,6 +217,7 @@ historyDays.addEventListener('click', event => {
   const row = event.target.closest('[data-date]');
   if (!row) return;
   selectDay(row.dataset.date);
+  openView('tasks');
   scrollToDate();
 });
 
@@ -359,6 +393,7 @@ window.addEventListener('storage', event => {
 
 refreshStorage();
 render();
+renderRoute();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {
