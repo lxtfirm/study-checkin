@@ -140,21 +140,19 @@
             <button class="btn secondary" id="focus-finish" type="button" hidden>结束并记录</button>
             <button class="btn secondary" id="focus-check" type="button" hidden>勾选关联任务</button>
           </div>
-          <div class="focus-reminder">
-            <button class="btn secondary" id="focus-notifications" type="button">开启系统通知</button>
-            <p class="hint" id="focus-notification-status" role="status"></p>
-          </div>
-          <details class="focus-reminder">
-            <summary>iPhone 锁屏提醒</summary>
-            <label class="clock-auto"><input id="focus-clock-auto" type="checkbox"> 开始专注时同时启动 iPhone 时钟</label>
-            <p class="hint">时钟接收网页设置的时长，锁屏或关闭网页后也会继续倒计时。</p>
-            <ol class="clock-setup">
-              <li>编辑快捷指令 <strong>考研专注提醒</strong>，使用「时钟」里的「开始计时器」动作。</li>
-              <li>时长选变量「快捷指令输入」，单位设为「秒」。如果有「打开计时器」或「请求输入」动作，移除它们。</li>
-              <li>勾选上方选项，回到专注页点「开始专注」。首次使用可设 1 分钟，确认 iPhone 已经开始倒数。</li>
-            </ol>
-            <button class="btn secondary" id="focus-clock-reminder" type="button">把当前剩余时间交给时钟</button>
-            <p class="hint" id="focus-clock-status">每次交给时钟都会新建一个计时器。暂停或提前结束时，请在「时钟」里同步调整。</p>
+          <p class="hint focus-clock-mode" id="focus-clock-mode" hidden>开始专注时，iPhone 时钟会接管锁屏提醒。</p>
+          <details class="focus-reminder" id="focus-reminder-settings">
+            <summary>提醒设置</summary>
+            <div id="focus-clock-setup">
+              <p class="hint">在「快捷指令」中创建「考研专注提醒」，添加「开始计时器」，时长选「快捷指令输入」，单位选「秒」。</p>
+            </div>
+            <p class="hint" id="focus-clock-controls" hidden>暂停或提前结束专注时，请在 iPhone「时钟」里同步调整系统计时器。</p>
+            <button class="btn secondary" id="focus-clock-setting" type="button">我已设置快捷指令</button>
+            <p class="hint" id="focus-clock-status" role="status"></p>
+            <div class="focus-browser-notifications">
+              <button class="btn secondary" id="focus-notifications" type="button">开启网页通知</button>
+              <p class="hint" id="focus-notification-status" role="status"></p>
+            </div>
           </details>
         </section>
         <section class="panel" id="history" data-view="history" hidden aria-labelledby="history-title">

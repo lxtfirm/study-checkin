@@ -12,8 +12,7 @@ const miniToggle = byId('focus-mini-toggle');
 const durationPresets = document.querySelectorAll('[data-focus-minutes]');
 const notificationButton = byId('focus-notifications');
 const notificationStatus = byId('focus-notification-status');
-const clockReminder = byId('focus-clock-reminder');
-const clockAuto = byId('focus-clock-auto');
+const clockSetting = byId('focus-clock-setting');
 const clockAutoKey = `${storageKey}:clock-auto`;
 const completionAlert = byId('focus-alert');
 const supportsNotifications = 'Notification' in window && 'serviceWorker' in navigator;
@@ -30,15 +29,30 @@ function launchClockReminder(timer) {
   else renderTimer(true);
 }
 
+let clockAuto = false;
 try {
-  clockAuto.checked = localStorage.getItem(clockAutoKey) === 'true';
-} catch { /* The option can still be used during this visit. */ }
+  clockAuto = localStorage.getItem(clockAutoKey) === 'true';
+} catch { /* The setting can still be changed during this visit. */ }
 
-clockAuto.addEventListener('change', () => {
+function renderClockSetting() {
+  byId('focus-clock-mode').hidden = !clockAuto;
+  byId('focus-clock-setup').hidden = clockAuto;
+  byId('focus-clock-controls').hidden = !clockAuto;
+  clockSetting.textContent = clockAuto ? '关闭时钟提醒' : '我已设置快捷指令';
+}
+
+clockSetting.addEventListener('click', () => {
+  clockAuto = !clockAuto;
+  renderClockSetting();
+  const status = byId('focus-clock-status');
   try {
-    localStorage.setItem(clockAutoKey, String(clockAuto.checked));
+    localStorage.setItem(clockAutoKey, String(clockAuto));
+    status.textContent = '';
+    const settings = byId('focus-reminder-settings');
+    settings.open = false;
+    settings.querySelector('summary').focus();
   } catch {
-    byId('focus-clock-status').textContent = '本次可以使用，浏览器未能保存这个选项。';
+    status.textContent = '设置已应用到本次使用，浏览器未能保存。';
   }
 });
 
@@ -167,7 +181,6 @@ function renderTimer(retry = false) {
   byId('focus-badge').textContent = status;
   focusToggle.textContent = timer ? (timer.ends === null ? '继续专注' : '暂停') : '开始专注';
   focusToggle.disabled = !!timer && remaining === 0;
-  clockReminder.disabled = !timer || timer.ends === null || remaining === 0;
   taskSelect.disabled = durationInput.disabled = !!timer;
   for (const preset of durationPresets) preset.disabled = !!timer;
   focusFinish.hidden = !timer;
@@ -209,13 +222,9 @@ function toggleFocus(allowStart) {
 
 focusToggle.addEventListener('click', () => {
   const started = toggleFocus(true);
-  if (started && clockAuto.checked) launchClockReminder(started);
+  if (started && clockAuto) launchClockReminder(started);
 });
 miniToggle.addEventListener('click', () => toggleFocus(false));
-clockReminder.addEventListener('click', () => {
-  const timer = readTimer();
-  if (timer && timer.ends !== null) launchClockReminder(timer);
-});
 
 focusFinish.addEventListener('click', () => {
   const timer = readTimer();
@@ -259,3 +268,4 @@ window.addEventListener('storage', event => { if (event.key === timerKey || even
 setInterval(() => renderTimer(), 250);
 refreshFocus();
 renderNotificationSettings();
+renderClockSetting();
