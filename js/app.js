@@ -40,10 +40,10 @@ function commit(next) {
   storageError();
 }
 
-function changeDay(change) {
+function changeDay(change, key = current) {
   try {
     const next = loadDays();
-    next[current] = change(next[current] || {});
+    next[key] = change(next[key] || {});
     commit(next);
     return true;
   } catch {
@@ -84,6 +84,7 @@ function renderPlan(day) {
   byId('mode-hint').textContent = mode === 'lecture' ? '理解新知识，复现例题，少量练习。' : '回顾已学知识，独立做题，整理错题。';
   list.innerHTML = taskSection('下午 · 高数', '01', mathTasks(day), day) +
     taskSection('晚上 · 英语一', '02', english, day) + taskSection('晚间 · 复盘与收尾', '03', review, day);
+  document.dispatchEvent(new Event('study-plan-change'));
 }
 
 function renderAccuracy(day) {
@@ -99,20 +100,40 @@ function renderAccuracy(day) {
 }
 
 function renderHistory() {
-  const { week, streak } = weekStats(days, today);
+  const { week, streak, focused } = weekStats(days, today);
   byId('week').textContent = week;
   byId('streak').textContent = streak;
+  byId('focus-week').textContent = focusMinutes(focused);
   const rows = [];
   for (let offset = -6; offset <= 0; offset++) {
     const key = moveDay(today, offset);
     const { done, total, percent } = completion(days[key]);
     const date = offset === 0 ? '今天' : shortDate.format(dateAtNoon(key));
-    rows.push(`<li><button class="history-day" type="button" data-date="${key}" aria-current="${key === current ? 'date' : 'false'}" aria-label="${key}，完成 ${done} / ${total} 项，${percent}%">
-      <span class="history-label">${date}</span><span class="mini-track" aria-hidden="true"><span style="width:${percent}%"></span></span><strong>${percent}%</strong>
+    const minutes = focusMinutes(focusSeconds(days[key]));
+    rows.push(`<li><button class="history-day" type="button" data-date="${key}" aria-current="${key === current ? 'date' : 'false'}" aria-label="${key}，完成 ${done} / ${total} 项，${percent}%，专注 ${minutes} 分钟">
+      <span class="history-label">${date}</span><span class="mini-track" aria-hidden="true"><span style="width:${percent}%"></span></span><strong>${percent}%</strong><span class="history-focus">${minutes} 分</span>
     </button></li>`);
   }
   historyDays.innerHTML = rows.join('');
 }
+
+function renderCourse() {
+  const latest = Object.keys(days).filter(key => key <= current && days[key].course !== undefined).sort().pop();
+  const count = days[latest]?.course ?? 0;
+  byId('course-count').textContent = count;
+  byId('course-progress').value = count;
+  byId('course-input').value = count;
+  byId('course-next').textContent = count === 30 ? '已完成全部课程，可以开始系统复习。' : `下一讲 · 第 ${count + 1} 讲`;
+}
+
+byId('course-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const count = byId('course-input').valueAsNumber;
+  if (validNumber(count) && count <= 30 && changeDay(day => ({ ...day, course: count }))) {
+    renderCourse();
+    toast('课程进度已保存');
+  }
+});
 
 function render() {
   const day = days[current] || {};
@@ -121,6 +142,10 @@ function render() {
   const greeting = hour < 11 ? '早上好' : hour < 14 ? '中午好' : hour < 19 ? '下午好' : '晚上好';
   byId('greeting').textContent = isToday ? greeting : current < today ? '历史记录' : '学习计划';
   byId('dateLabel').textContent = dateFormat.format(dateAtNoon(current));
+  const index = Math.floor(Date.parse(today) / 86400000);
+  const [line, source] = poems[((index % poems.length) + poems.length) % poems.length];
+  byId('poem-line').textContent = line;
+  byId('poem-source').textContent = source;
   byId('progress-title').textContent = isToday ? '今日学习进度' : '当日学习进度';
   dateField.max = '9999-12-31';
   dateField.value = current;
@@ -131,6 +156,7 @@ function render() {
   for (const field of fields) byId(field).value = day[field] ?? '';
   byId('field-error').hidden = true;
   renderAccuracy(day);
+  renderCourse();
   renderHistory();
 }
 

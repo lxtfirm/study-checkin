@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f3f7fd" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#101827" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f3ed" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#191e1a" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="考研打卡">
@@ -17,33 +17,44 @@
   <script defer src="./js/schedule.js"></script>
   <script defer src="./js/storage.js"></script>
   <script defer src="./js/app.js"></script>
+  <script defer src="./js/focus.js"></script>
 </head>
 <body>
   <div class="app">
     <header class="topbar">
       <div class="brand"><img src="./icons/icon-192.png" width="38" height="38" alt="">考研打卡</div>
-      <a class="history-link" href="#history">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 19h16M7 15v-4m5 4V5m5 10V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        历史统计
-      </a>
+      <a class="history-link" href="https://www.xli-tong.cloud/">Firm 的博客 <span aria-hidden="true">↗</span></a>
     </header>
     <noscript><p class="notice">请启用 JavaScript 以使用打卡和本地保存。</p></noscript>
     <p class="notice" id="storage-error" role="alert" hidden></p>
     <button class="notice update" id="update" type="button" hidden>新版本已就绪，点此更新</button>
-    <div class="dashboard">
-      <main id="daily">
-        <header class="intro">
-          <p class="eyebrow">2028 考研 · 学习计划</p>
-          <h1 id="greeting">今日学习</h1>
-          <p class="date" id="dateLabel"></p>
-        </header>
+    <section class="cover" aria-labelledby="greeting">
+      <svg class="cover-art" viewBox="0 0 640 240" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+        <circle cx="454" cy="78" r="38" fill="#e5b780" opacity=".58"/>
+        <path d="M0 240v-21c83 0 133-37 203-65 88-35 124-5 171-26 82-36 105-35 157-29 51 6 89-26 109-46v187Z" fill="#7f9a85"/>
+        <path d="M0 240v-14c120-4 162-17 252-44 67-21 122 15 176 3 66-15 105-59 212-48v103Z" fill="#5e8270"/>
+        <path d="M0 240c116-9 204-26 278-23 94 5 133-33 208-31 71 1 99 7 154-23v77Z" fill="#395d50"/>
+        <path d="M527 240c6-31 9-58 1-91m6 65c-12-15-20-19-33-18 8 14 20 18 33 18Zm-1-21c8-15 16-19 28-21-4 12-15 21-28 21Zm-6-38c-20 1-27-16-14-22 3-11 18-15 22-5 15-2 18 12 7 19-4 5-8 8-15 8Z" fill="none" stroke="#d5dbc8" stroke-width="1.7"/>
+      </svg>
+      <div class="cover-copy">
+        <p class="eyebrow">考研手记 <span>／</span> 2028</p>
+        <h1 id="greeting">今日学习</h1>
+        <p class="date" id="dateLabel"></p>
+        <figure class="poem">
+          <figcaption>每日诗句</figcaption>
+          <blockquote id="poem-line"></blockquote>
+          <cite id="poem-source"></cite>
+        </figure>
+      </div>
+    </section>
+    <nav class="section-nav" aria-label="学习模块">
+      <a href="#tasks">每日任务</a><a href="#course">课程进度</a><a href="#focus">专注计时</a><a href="#history">学习统计</a>
+    </nav>
+    <main class="dashboard" id="daily">
+      <div class="task-column" id="tasks">
         <section class="hero" aria-labelledby="progress-title">
-          <svg class="hero-art" viewBox="0 0 190 150" fill="none" aria-hidden="true">
-            <circle cx="114" cy="70" r="56"/><circle cx="114" cy="70" r="73"/>
-            <path d="M114 52c-13-10-25-12-43-6v47c18-6 30-4 43 6 13-10 25-12 43-6V46c-18-6-30-4-43 6zm0 0v47M81 58c8-2 14-1 21 2m-21 9c8-2 14-1 21 2m25-11c7-3 13-4 21-2m-21 13c7-3 13-4 21-2M45 43v12m-6-6h12m121 48v14m-7-7h14"/>
-          </svg>
           <div class="herotop">
-            <h2 id="progress-title">今日学习进度</h2>
+            <h2 id="progress-title">今日任务</h2>
             <span class="pill" id="status"></span>
           </div>
           <p id="progress" class="progress-number" aria-hidden="true">0%</p>
@@ -57,7 +68,7 @@
           <button type="button" id="today" class="today">回到今天</button>
         </div>
         <section class="plan" aria-labelledby="plan-title">
-          <div class="section"><h2 id="plan-title">学习安排</h2><span>14:30–22:30</span></div>
+          <div class="section"><h2 id="plan-title">任务清单</h2><span>14:30–22:30</span></div>
           <div class="modes" role="group" aria-label="学习模式">
             <button type="button" class="mode" data-mode="lecture" aria-pressed="true">网课日</button>
             <button type="button" class="mode" data-mode="practice" aria-pressed="false">巩固日</button>
@@ -65,6 +76,60 @@
           <p class="hint" id="mode-hint"></p>
           <div id="list"></div>
         </section>
+      </div>
+      <aside class="sidebar" aria-label="学习工具">
+        <section class="panel" id="course" aria-labelledby="course-title">
+          <div class="panel-title"><h2 id="course-title">课程进度</h2><span class="badge">高数</span></div>
+          <p class="course-name">张宇《基础30讲》</p>
+          <p class="course-count"><strong id="course-count">0</strong> / 30 讲</p>
+          <progress id="course-progress" max="30" value="0" aria-label="基础30讲已学讲数"></progress>
+          <p class="hint" id="course-next"></p>
+          <form class="course-edit" id="course-form">
+            <label for="course-input">累计已学讲数</label>
+            <input id="course-input" type="number" inputmode="numeric" min="0" max="30" step="1" required>
+            <button type="submit" class="btn secondary">保存</button>
+          </form>
+        </section>
+        <section class="panel focus-panel" id="focus" aria-labelledby="focus-title">
+          <div class="panel-title"><h2 id="focus-title">专注计时</h2><span class="badge" id="focus-badge">今天</span></div>
+          <div class="focus-options">
+            <label>专注任务<select id="focus-task"></select></label>
+            <label>时长<select id="focus-duration"><option value="15">15 分钟</option><option value="25" selected>25 分钟</option><option value="45">45 分钟</option></select></label>
+          </div>
+          <div class="clock" id="focus-clock" role="timer">25:00</div>
+          <p class="hint focus-status" id="focus-status" role="status">选一项任务，留一段时间给它。</p>
+          <div class="actions">
+            <button class="btn" id="focus-toggle" type="button">开始专注</button>
+            <button class="btn secondary" id="focus-finish" type="button" hidden>结束并记录</button>
+            <button class="btn secondary" id="focus-check" type="button" hidden>勾选关联任务</button>
+          </div>
+        </section>
+        <section class="panel" id="history" aria-labelledby="history-title">
+          <div class="panel-title">
+            <div><p class="eyebrow">学习轨迹</p><h2 id="history-title" tabindex="-1">学习统计</h2></div>
+            <span class="badge">最近 7 天</span>
+          </div>
+          <div class="metrics">
+            <div><span>本周完成</span><strong id="week">0</strong><span>项</span></div>
+            <div><span>连续打卡</span><strong id="streak">0</strong><span>天</span></div>
+            <div><span>本周专注</span><strong id="focus-week">0</strong><span>分</span></div>
+          </div>
+          <ol class="history-days" id="history-days" aria-label="最近 7 天任务完成率与专注时长"></ol>
+          <p class="hint">点选日期查看当天记录。每日至少完成一项学习任务才算打卡。专注时长按实际记录累计。</p>
+          <button class="btn secondary history-date" id="pick-date" type="button">选择其他日期</button>
+        </section>
+        <section class="panel backup" aria-labelledby="backup-title">
+          <p class="eyebrow">本地数据</p>
+          <h2 id="backup-title">数据备份</h2>
+          <p class="hint">记录保存在当前浏览器或主屏幕 Web App 的本地存储中。跨设备或环境不会自动同步，清除网站数据可能导致记录丢失。</p>
+          <div class="actions">
+            <button type="button" class="btn" id="export">导出 JSON</button>
+            <button type="button" class="btn secondary" id="import">导入 JSON</button>
+          </div>
+          <input type="file" accept=".json,application/json" id="backup-file" hidden>
+          <p id="backup-message" class="hint" role="status" hidden></p>
+        </section>
+      </aside>
         <section id="records" aria-labelledby="records-title">
           <div class="section"><h2 id="records-title">学习记录</h2><span>自动保存到本机</span></div>
           <div class="note">
@@ -99,35 +164,8 @@
             <button type="button" class="btn secondary" id="reset">清空所选日期</button>
           </div>
         </section>
-      </main>
-      <aside class="sidebar" id="history" aria-labelledby="history-title">
-        <section class="panel">
-          <div class="panel-title">
-            <div><p class="eyebrow">学习轨迹</p><h2 id="history-title" tabindex="-1">历史统计</h2></div>
-            <span class="badge">最近 7 天</span>
-          </div>
-          <div class="metrics">
-            <div><span>本周完成</span><strong id="week">0</strong><span>项</span></div>
-            <div><span>连续打卡</span><strong id="streak">0</strong><span>天</span></div>
-          </div>
-          <ol class="history-days" id="history-days" aria-label="最近 7 天完成率"></ol>
-          <p class="hint">点选日期查看当天记录。每日至少完成一项学习任务才算打卡。</p>
-          <button class="btn secondary history-date" id="pick-date" type="button">选择其他日期</button>
-        </section>
-        <section class="panel backup" aria-labelledby="backup-title">
-          <p class="eyebrow">本地数据</p>
-          <h2 id="backup-title">数据备份</h2>
-          <p class="hint">记录保存在当前浏览器或主屏幕 Web App 的本地存储中。跨设备或环境不会自动同步，清除网站数据可能导致记录丢失。</p>
-          <div class="actions">
-            <button type="button" class="btn" id="export">导出 JSON</button>
-            <button type="button" class="btn secondary" id="import">导入 JSON</button>
-          </div>
-          <input type="file" accept=".json,application/json" id="backup-file" hidden>
-          <p id="backup-message" class="hint" role="status" hidden></p>
-        </section>
-        <footer>考研打卡 · 2028</footer>
-      </aside>
-    </div>
+    </main>
+    <footer>考研打卡 · 2028</footer>
   </div>
   <div class="toast" id="toast" role="status"></div>
 </body>

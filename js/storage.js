@@ -18,6 +18,12 @@ function validateDay(day) {
       result[field] = value;
     } else if (numberFields.includes(field) && (value === null || validNumber(value))) {
       result[field] = value;
+    } else if (field === 'course' && validNumber(value) && value <= 30) {
+      result.course = value;
+    } else if (field === 'focus' && isObject(value) && Object.entries(value).every(([id, session]) =>
+      /^[\da-f-]{36}$/.test(id) && isObject(session) && taskIds.has(session.task) &&
+      validNumber(session.seconds) && session.seconds > 0 && session.seconds <= 2700)) {
+      result.focus = Object.fromEntries(Object.entries(value).map(([id, { task, seconds }]) => [id, { task, seconds }]));
     } else {
       throw new Error(`字段 ${field} 的格式有误。`);
     }
@@ -40,8 +46,8 @@ function parseBackup(text) {
   } catch {
     throw new Error('文件不是有效的 JSON。');
   }
-  if (!isObject(backup) || backup.format !== backupFormat || backup.version !== 1) {
-    throw new Error('请选择本应用导出的第 1 版 JSON 备份。');
+  if (!isObject(backup) || backup.format !== backupFormat || ![1, 2].includes(backup.version)) {
+    throw new Error('请选择本应用导出的 JSON 备份。');
   }
   return validateDays(backup.days);
 }
@@ -65,7 +71,7 @@ function loadDays() {
 }
 
 function serializeDays(days, indent) {
-  return JSON.stringify({ format: backupFormat, version: 1, days }, null, indent);
+  return JSON.stringify({ format: backupFormat, version: 2, days }, null, indent);
 }
 
 function saveDays(days) {

@@ -1,11 +1,11 @@
 // Bump the version whenever a cached app file changes.
-const version = 'v1';
+const version = 'v2';
 const base = self.registration.scope;
 const prefix = `study-checkin:${base}:`;
 const cacheName = prefix + version;
 const home = new URL('./index.html', base).href;
 const shell = [
-  './index.html', './css/style.css', './js/schedule.js', './js/storage.js', './js/app.js',
+  './index.html', './css/style.css', './js/schedule.js', './js/storage.js', './js/app.js', './js/focus.js',
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
 ].map(path => new URL(path, base).href);
 
