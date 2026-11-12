@@ -5,6 +5,10 @@ const focusToggle = byId('focus-toggle');
 const focusFinish = byId('focus-finish');
 const focusCheck = byId('focus-check');
 const focusStatus = byId('focus-status');
+const miniTitle = byId('focus-mini-title');
+const miniState = byId('focus-mini-state');
+const miniTime = byId('focus-mini-time');
+const miniToggle = byId('focus-mini-toggle');
 const durations = [15, 25, 45];
 
 function readTimer() {
@@ -85,16 +89,26 @@ function renderTimer(retry = false) {
     }
   }
   const seconds = Math.ceil(remaining / 1000);
-  byId('focus-clock').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-  byId('focus-badge').textContent = timer ? (timer.ends === null ? '已暂停' : '专注中') : '今天';
+  const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  const status = timer ? (remaining === 0 ? '待保存' : timer.ends === null ? '已暂停' : '专注中') : '今天';
+  byId('focus-clock').textContent = time;
+  byId('focus-badge').textContent = status;
   focusToggle.textContent = timer ? (timer.ends === null ? '继续专注' : '暂停') : '开始专注';
   focusToggle.disabled = !!timer && remaining === 0;
   taskSelect.disabled = durationSelect.disabled = !!timer;
   focusFinish.hidden = !timer;
   focusCheck.hidden = !!timer || !pendingTask();
+
+  miniTitle.textContent = timer ? taskSelect.selectedOptions[0].textContent : '专注计时';
+  miniState.textContent = timer ? status : '选择任务与时长';
+  miniTime.hidden = !timer;
+  miniTime.textContent = time;
+  miniToggle.hidden = !timer || remaining === 0;
+  miniToggle.textContent = timer?.ends === null ? '继续' : '暂停';
+  miniToggle.setAttribute('aria-label', `${miniToggle.textContent}专注`);
 }
 
-focusToggle.addEventListener('click', () => {
+function toggleFocus(allowStart) {
   checkDate();
   const timer = readTimer();
   if (timer) {
@@ -102,12 +116,16 @@ focusToggle.addEventListener('click', () => {
     if (!remaining) return renderTimer(true);
     if (!writeTimer({ ...timer, remaining, ends: timer.ends === null ? Date.now() + remaining : null })) return;
   } else {
+    if (!allowStart) return;
     const minutes = Number(durationSelect.value);
     const remaining = minutes * 60000;
     if (!writeTimer({ id: crypto.randomUUID(), date: today, task: taskSelect.value, minutes, remaining, ends: Date.now() + remaining })) return;
   }
   renderTimer();
-});
+}
+
+focusToggle.addEventListener('click', () => toggleFocus(true));
+miniToggle.addEventListener('click', () => toggleFocus(false));
 
 focusFinish.addEventListener('click', () => {
   const timer = readTimer();

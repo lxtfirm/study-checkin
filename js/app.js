@@ -60,6 +60,9 @@ function renderRoute() {
     else link.removeAttribute('aria-current');
   }
   byId('daynav').hidden = route !== 'tasks' && route !== 'course';
+  const dock = byId('study-dock');
+  dock.dataset.section = route;
+  dock.style.setProperty('--tab-index', routes.findIndex(link => link.dataset.route === route));
 }
 
 function openView(route) {
@@ -76,6 +79,12 @@ for (const link of routes) {
   });
 }
 window.addEventListener('hashchange', renderRoute);
+byId('focus-mini-link').addEventListener('click', event => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  openView('focus');
+  byId('focus-title').focus({ preventScroll: true });
+});
 
 function toast(message) {
   const node = byId('toast');

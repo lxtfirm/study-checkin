@@ -68,12 +68,23 @@
           <button type="button" id="next" class="arrow" aria-label="后一天">›</button>
           <button type="button" id="today" class="today">回到今天</button>
         </div>
-    <nav class="section-nav" aria-label="学习模块">
-      <a href="#tasks" data-route="tasks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg><span>每日任务</span></a>
-      <a href="#course" data-route="course"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Zm0 0v14"/></svg><span>课程进度</span></a>
-      <a href="#focus" data-route="focus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6m-3 8v4m7-9 1-1M12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z"/></svg><span>专注计时</span></a>
-      <a href="#history" data-route="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5m5 5V5m5 11V8"/></svg><span>学习统计</span></a>
-    </nav>
+    <div class="study-dock" id="study-dock">
+      <div class="focus-mini">
+        <a class="focus-mini-link" id="focus-mini-link" href="#focus">
+          <span class="focus-mini-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6m-3 8v4m7-9 1-1M12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z"/></svg></span>
+          <span class="focus-mini-copy"><strong id="focus-mini-title">专注计时</strong><span id="focus-mini-state">选择任务与时长</span></span>
+          <span class="focus-mini-time" id="focus-mini-time" hidden></span>
+          <span class="focus-mini-arrow" aria-hidden="true">›</span>
+        </a>
+        <button class="focus-mini-toggle" id="focus-mini-toggle" type="button" hidden></button>
+      </div>
+      <nav class="section-nav" aria-label="学习模块">
+        <a href="#tasks" data-route="tasks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg><span>每日任务</span></a>
+        <a href="#course" data-route="course"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Zm0 0v14"/></svg><span>课程进度</span></a>
+        <a href="#focus" data-route="focus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6m-3 8v4m7-9 1-1M12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z"/></svg><span>专注计时</span></a>
+        <a href="#history" data-route="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5m5 5V5m5 11V8"/></svg><span>学习统计</span></a>
+      </nav>
+    </div>
     <main class="dashboard" id="daily">
       <div id="tasks" data-view="tasks">
         <section class="hero" aria-labelledby="progress-title">
@@ -108,7 +119,7 @@
           </form>
         </section>
         <section class="panel focus-panel" id="focus" data-view="focus" hidden aria-labelledby="focus-title">
-          <div class="panel-title"><h2 id="focus-title">专注计时</h2><span class="badge" id="focus-badge">今天</span></div>
+          <div class="panel-title"><h2 id="focus-title" tabindex="-1">专注计时</h2><span class="badge" id="focus-badge">今天</span></div>
           <div class="focus-options">
             <label>专注任务<select id="focus-task"></select></label>
             <label>时长<select id="focus-duration"><option value="15">15 分钟</option><option value="25" selected>25 分钟</option><option value="45">45 分钟</option></select></label>
