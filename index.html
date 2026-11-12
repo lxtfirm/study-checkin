@@ -47,6 +47,18 @@
         </figure>
       </div>
     </section>
+    <details class="exam-countdown" data-view="tasks" id="exam-countdown">
+      <summary>
+        <span><strong>2028 考研初试</strong><span class="exam-date" id="exam-date-label"></span></span>
+        <span class="exam-remaining" id="exam-remaining"></span>
+      </summary>
+      <form id="exam-form" class="course-edit">
+        <label for="exam-date">目标日期（北京时间）</label>
+        <input id="exam-date" type="date" min="2027-01-01" max="2028-12-31" required>
+        <button type="submit" class="btn secondary">保存</button>
+      </form>
+      <p class="hint" id="exam-status" role="status">正式考试日期以教育部公告为准。</p>
+    </details>
         <div class="daynav" id="daynav" aria-label="查看日期">
           <button type="button" id="prev" class="arrow" aria-label="前一天">‹</button>
           <label class="date-picker">

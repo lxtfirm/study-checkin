@@ -11,6 +11,43 @@ let current = today;
 let days = {};
 let toastTimeout;
 
+const defaultExamDate = '2027-12-18';
+const examDateKey = `${storageKey}:exam-date`;
+const examDateInput = byId('exam-date');
+const validExamDate = date => validDay(date) && date >= examDateInput.min && date <= examDateInput.max;
+let savedExamDate;
+try {
+  const date = localStorage.getItem(examDateKey);
+  if (date && validExamDate(date)) savedExamDate = date;
+} catch { /* The provisional date remains available without storage. */ }
+examDateInput.value = savedExamDate || defaultExamDate;
+
+function examDaysRemaining(target, now = new Date()) {
+  const beijingDate = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return (Date.parse(target) - Date.parse(beijingDate)) / 86400000;
+}
+
+function renderExamCountdown() {
+  const date = savedExamDate || defaultExamDate;
+  const remaining = examDaysRemaining(date);
+  byId('exam-date-label').textContent = `${savedExamDate ? '目标' : '暂定'} ${date.replaceAll('-', '.')}`;
+  byId('exam-remaining').textContent = remaining > 0 ? `还有 ${remaining} 天` : remaining === 0 ? '就是今天' : '目标日期已过';
+}
+
+byId('exam-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const date = examDateInput.value;
+  if (!validExamDate(date)) return;
+  try {
+    localStorage.setItem(examDateKey, date);
+    savedExamDate = date;
+    renderExamCountdown();
+    byId('exam-status').textContent = '目标日期已保存在此设备。';
+  } catch {
+    byId('exam-status').textContent = '暂时无法保存，请检查浏览器存储设置。';
+  }
+});
+
 const routes = [...document.querySelectorAll('[data-route]')];
 const views = [...document.querySelectorAll('[data-view]')];
 
@@ -374,6 +411,7 @@ backupFile.addEventListener('change', async () => {
 });
 
 function checkDate() {
+  renderExamCountdown();
   const nextToday = localDay();
   if (nextToday === today) return;
   if (current === today) current = nextToday;
@@ -386,6 +424,11 @@ document.addEventListener('visibilitychange', () => {
 });
 setInterval(checkDate, 60000);
 window.addEventListener('storage', event => {
+  if (event.key === examDateKey || event.key === null) {
+    savedExamDate = event.newValue && validExamDate(event.newValue) ? event.newValue : undefined;
+    examDateInput.value = savedExamDate || defaultExamDate;
+    renderExamCountdown();
+  }
   if (event.key !== storageKey && event.key !== null) return;
   refreshStorage();
   render();
@@ -394,6 +437,7 @@ window.addEventListener('storage', event => {
 refreshStorage();
 render();
 renderRoute();
+renderExamCountdown();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {

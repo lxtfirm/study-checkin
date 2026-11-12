@@ -227,6 +227,14 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 6px 
 .poem { margin: 18px 0 0; border-left: 2px solid #8ea9ce; padding: 0 0 0 12px; }
 .poem figcaption, .poem cite { display: block; font-size: 12px; font-style: normal; color: #365376; }
 .poem figcaption { letter-spacing: .16em; }
+.exam-countdown { margin-top: 10px; padding: 0 14px; border: 1px solid var(--edge); border-radius: 15px; background: var(--surface); }
+.exam-countdown summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; min-height: 62px; padding: 8px 0; cursor: pointer; }
+.exam-date { display: block; color: var(--muted); font-size: 12px; }
+.exam-remaining { color: var(--blue); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.exam-remaining::after { content: '⌄'; margin-left: 7px; }
+.exam-countdown[open] .exam-remaining::after { content: '⌃'; }
+.exam-countdown .course-edit { margin-top: 2px; }
+.exam-countdown .hint { margin: 8px 0 12px; }
 .poem blockquote { margin: 3px 0 4px; font-size: clamp(20px, 4.8vw, 31px); line-height: 1.45; }
 .course-name { margin-top: 9px; color: var(--muted); font-size: 14px; }
 .course-count { color: var(--muted); font-size: 14px; }
