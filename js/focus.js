@@ -34,11 +34,14 @@ try {
   clockAuto = localStorage.getItem(clockAutoKey) === 'true';
 } catch { /* The setting can still be changed during this visit. */ }
 
+const usesClockReminder = timer => timer.clockRequested ?? clockAuto;
+
 function renderClockSetting() {
   byId('focus-clock-mode').hidden = !clockAuto;
   byId('focus-clock-setup').hidden = clockAuto;
   byId('focus-clock-controls').hidden = !clockAuto;
   clockSetting.textContent = clockAuto ? '关闭时钟提醒' : '我已设置快捷指令';
+  renderNotificationSettings();
 }
 
 clockSetting.addEventListener('click', () => {
@@ -60,7 +63,7 @@ function renderNotificationSettings() {
   const permission = supportsNotifications ? Notification.permission : 'unavailable';
   notificationButton.hidden = permission !== 'default';
   notificationStatus.textContent = {
-    granted: '已开启系统通知。页面休眠时，返回后补发提醒。',
+    granted: clockAuto ? '已开启网页通知。使用 iPhone 时钟的专注由时钟提醒。' : '已开启网页通知。页面休眠时，返回后补发提醒。',
     denied: '系统通知已关闭。可在设备设置中调整，页面仍会提醒。',
     default: '专注到点会在页面提醒。锁屏或关闭页面时，系统可能暂停计时程序。',
     unavailable: '到点会在页面提醒。iPhone 可从主屏幕打开网页应用后开启系统通知。',
@@ -80,6 +83,7 @@ notificationButton.addEventListener('click', async () => {
 byId('focus-alert-dismiss').addEventListener('click', () => { completionAlert.hidden = true; });
 
 async function remindCompletion(timer, taskName) {
+  if (usesClockReminder(timer)) return;
   const message = `${taskName} · ${timer.minutes} 分钟专注结束`;
   completionAlert.hidden = false;
   byId('focus-alert-message').textContent = message;
@@ -201,7 +205,12 @@ function toggleFocus(allowStart) {
   if (timer) {
     const remaining = remainingTime(timer);
     if (!remaining) return renderTimer(true);
-    if (!writeTimer({ ...timer, remaining, ends: timer.ends === null ? Date.now() + remaining : null })) return;
+    const resuming = timer.ends === null;
+    if (!writeTimer({ ...timer, remaining, ends: resuming ? Date.now() + remaining : null })) return;
+    renderTimer();
+    if (usesClockReminder(timer)) {
+      toast(resuming ? '网页已继续，请在 iPhone 时钟继续对应计时器。' : '网页已暂停，请在 iPhone 时钟暂停对应计时器。');
+    }
   } else {
     if (!allowStart) return;
     const minutes = durationInput.valueAsNumber;
@@ -212,17 +221,19 @@ function toggleFocus(allowStart) {
     }
     completionAlert.hidden = true;
     const remaining = minutes * 60000;
-    const started = { id: crypto.randomUUID(), date: today, task: taskSelect.value, minutes, remaining, ends: Date.now() + remaining };
+    const started = {
+      id: crypto.randomUUID(), date: today, task: taskSelect.value, minutes, remaining,
+      ends: Date.now() + remaining, clockRequested: clockAuto,
+    };
     if (!writeTimer(started)) return;
     renderTimer();
     return started;
   }
-  renderTimer();
 }
 
 focusToggle.addEventListener('click', () => {
   const started = toggleFocus(true);
-  if (started && clockAuto) launchClockReminder(started);
+  if (started?.clockRequested) launchClockReminder(started);
 });
 miniToggle.addEventListener('click', () => toggleFocus(false));
 
@@ -233,6 +244,7 @@ focusFinish.addEventListener('click', () => {
   if (remaining === 0) return renderTimer(true);
   if (saveSession(timer, remaining)) {
     renderTimer();
+    if (usesClockReminder(timer)) toast('专注已记录，请在 iPhone 时钟停止对应计时器。');
     (focusCheck.hidden ? focusToggle : focusCheck).focus();
   }
 });
@@ -267,5 +279,4 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('storage', event => { if (event.key === timerKey || event.key === null) refreshFocus(); });
 setInterval(() => renderTimer(), 250);
 refreshFocus();
-renderNotificationSettings();
 renderClockSetting();
