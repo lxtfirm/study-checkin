@@ -144,6 +144,17 @@
             <button class="btn secondary" id="focus-notifications" type="button">开启系统通知</button>
             <p class="hint" id="focus-notification-status" role="status"></p>
           </div>
+          <details class="focus-reminder">
+            <summary>iPhone 锁屏提醒</summary>
+            <p class="hint">把剩余时间交给 iPhone 的「时钟」，锁屏或关闭网页后也能继续倒计时。</p>
+            <ol class="clock-setup">
+              <li>在「快捷指令」新建 <strong>考研专注提醒</strong>。</li>
+              <li>添加「开始计时器」动作，时长选变量「快捷指令输入」，单位设为「秒」。</li>
+              <li>回到这里点「用 iPhone 时钟提醒」，再确认「时钟」里已经开始计时。</li>
+            </ol>
+            <button class="btn secondary" id="focus-clock-reminder" type="button">用 iPhone 时钟提醒</button>
+            <p class="hint">每次点按会运行快捷指令。网页暂停或提前结束时，可在「时钟」里调整已启动的计时器。</p>
+          </details>
         </section>
         <section class="panel" id="history" data-view="history" hidden aria-labelledby="history-title">
           <div class="panel-title">

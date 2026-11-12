@@ -12,9 +12,15 @@ const miniToggle = byId('focus-mini-toggle');
 const durationPresets = document.querySelectorAll('[data-focus-minutes]');
 const notificationButton = byId('focus-notifications');
 const notificationStatus = byId('focus-notification-status');
+const clockReminder = byId('focus-clock-reminder');
 const completionAlert = byId('focus-alert');
 const supportsNotifications = 'Notification' in window && 'serviceWorker' in navigator;
 const validDuration = minutes => validNumber(minutes) && minutes > 0 && Number.isSafeInteger(minutes * 60000 + Date.now());
+
+function clockShortcutUrl(remaining) {
+  const name = encodeURIComponent('考研专注提醒');
+  return `shortcuts://run-shortcut?name=${name}&input=text&text=${Math.ceil(remaining / 1000)}`;
+}
 
 function renderNotificationSettings() {
   const permission = supportsNotifications ? Notification.permission : 'unavailable';
@@ -141,6 +147,7 @@ function renderTimer(retry = false) {
   byId('focus-badge').textContent = status;
   focusToggle.textContent = timer ? (timer.ends === null ? '继续专注' : '暂停') : '开始专注';
   focusToggle.disabled = !!timer && remaining === 0;
+  clockReminder.disabled = !!timer && (timer.ends === null || remaining === 0);
   taskSelect.disabled = durationInput.disabled = !!timer;
   for (const preset of durationPresets) preset.disabled = !!timer;
   focusFinish.hidden = !timer;
@@ -179,6 +186,17 @@ function toggleFocus(allowStart) {
 
 focusToggle.addEventListener('click', () => toggleFocus(true));
 miniToggle.addEventListener('click', () => toggleFocus(false));
+clockReminder.addEventListener('click', () => {
+  let timer = readTimer();
+  if (!timer) {
+    toggleFocus(true);
+    timer = readTimer();
+  }
+  if (!timer || timer.ends === null) return;
+  const remaining = remainingTime(timer);
+  if (remaining > 0) location.assign(clockShortcutUrl(remaining));
+  else renderTimer(true);
+});
 
 focusFinish.addEventListener('click', () => {
   const timer = readTimer();

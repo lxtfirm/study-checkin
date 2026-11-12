@@ -254,6 +254,9 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 6px 
 .focus-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .focus-presets .btn, .focus-reminder .btn { background: var(--surface); }
 .focus-reminder { margin-top: 14px; }
+.focus-reminder summary { min-height: 44px; padding: 10px 0; font-weight: 650; cursor: pointer; }
+.clock-setup { padding-left: 22px; font-size: 14px; }
+.clock-setup li + li { margin-top: 6px; }
 .focus-alert { position: fixed; z-index: 7; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(calc(100% - 32px), 440px); display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 10px; border: 1px solid var(--edge); border-radius: 16px; background: var(--surface); box-shadow: 0 8px 24px #17294440; }
 .focus-alert p { min-width: 0; overflow-wrap: anywhere; padding-left: 4px; font-weight: 650; }
 .focus-alert .btn { flex: none; }
