@@ -34,9 +34,25 @@ const customId = id => typeof id === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3
 const validTaskId = id => taskIds.has(id) || (typeof id === 'string' && id.startsWith('t-') && customId(id.slice(2)));
 const modeOf = day => day?.mode || 'lecture';
 const mathTasks = day => modeOf(day) === 'practice' ? practice : lecture;
+const taskPeriods = Object.freeze({ morning: '上午', afternoon: '下午', evening: '晚上', unset: '未分时段' });
+const taskPeriod = ({ period, time }) => period || (!time ? 'unset' : time < '12:00' ? 'morning' : time < '18:00' ? 'afternoon' : 'evening');
 const customTasks = day => Object.entries(day?.tasks || {})
   .sort(([, a], [, b]) => (a.time || '24:00').localeCompare(b.time || '24:00'))
-  .map(([id, task]) => [id, task.time, task.name, '']);
+  .map(([id, task]) => [id, task.end ? `${task.time}–${task.end}` : task.time, task.name,
+    task.description || '', taskPeriod(task), task.subject || '']);
+
+function customGroups(day) {
+  const groups = new Map();
+  for (const task of customTasks(day)) {
+    const [, , , , period, subject] = task;
+    const title = `${taskPeriods[period]} · ${subject || '其他'}`;
+    if (!groups.has(period)) groups.set(period, new Map());
+    const sections = groups.get(period);
+    if (!sections.has(title)) sections.set(title, []);
+    sections.get(title).push(task);
+  }
+  return Object.keys(taskPeriods).flatMap(period => [...(groups.get(period) || [])]);
+}
 const studyTasks = day => modeOf(day) === 'custom' ? customTasks(day) : [...mathTasks(day), ...english, ...review].filter(([id]) => id);
 
 function completion(day) {

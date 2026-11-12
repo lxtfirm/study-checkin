@@ -1,34 +1,66 @@
 const taskEditor = byId('task-editor');
-let editedTask;
-let taskEditorDate = current;
+const taskDialog = byId('task-dialog');
+const courseDialog = byId('course-dialog');
+const courseList = byId('custom-courses');
+const customCourseForm = byId('custom-course-form');
+let editedTask, taskEditorDate, editedCourse, courseEditorDate;
 
-function resetTaskEditor() {
-  editedTask = undefined;
-  taskEditor.reset();
-  byId('task-submit').textContent = '添加任务';
-  byId('task-cancel').hidden = true;
+function editorError(id, message = '') {
+  const output = byId(id);
+  output.textContent = message;
+  output.hidden = !message;
 }
 
-document.addEventListener('study-plan-change', () => {
-  if (taskEditorDate !== current || taskEditor.hidden) resetTaskEditor();
+for (const dialog of [taskDialog, courseDialog]) {
+  dialog.addEventListener('click', event => {
+    if (event.target !== dialog) return;
+    const bounds = dialog.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX >= bounds.right ||
+        event.clientY < bounds.top || event.clientY >= bounds.bottom) dialog.close();
+  });
+}
+
+function openTaskEditor(id) {
+  const task = days[current]?.tasks?.[id];
+  editedTask = id;
   taskEditorDate = current;
+  taskEditor.reset();
+  byId('task-dialog-title').textContent = byId('task-submit').textContent = task ? '编辑任务' : '添加任务';
+  byId('task-dialog-date').textContent = `${current.replaceAll('-', '.')} · 自定义任务`;
+  for (const [field, key] of Object.entries({ name: 'name', description: 'description', time: 'time', end: 'end', period: 'period', subject: 'subject' })) {
+    byId(`task-${field}`).value = task?.[key] || '';
+  }
+  editorError('task-message');
+  taskDialog.showModal();
+}
+
+byId('task-add').addEventListener('click', () => openTaskEditor());
+byId('task-cancel').addEventListener('click', () => taskDialog.close());
+document.addEventListener('study-plan-change', () => {
+  if (taskDialog.open && (taskEditorDate !== current || modeOf(days[current]) !== 'custom')) taskDialog.close();
 });
 
 taskEditor.addEventListener('submit', event => {
   event.preventDefault();
-  const name = byId('task-name').value.trim();
-  const time = byId('task-time').value;
-  if (!validTitle(name) || !validTime(time)) return toast('请填写有效的任务名称和时间。');
+  const task = {
+    name: byId('task-name').value.trim(), description: byId('task-description').value.trim(),
+    time: byId('task-time').value, end: byId('task-end').value,
+    period: byId('task-period').value, subject: byId('task-subject').value.trim(),
+  };
+  if (!task.time || !task.end || !validTaskRange(task.time, task.end)) {
+    editorError('task-message', '请填写开始和结束时间，结束时间应晚于开始时间。');
+    byId('task-end').focus();
+    return;
+  }
+  if (!validCustomTask(task)) return editorError('task-message', '请填写有效的任务标题和内容。');
   const id = editedTask || `t-${crypto.randomUUID()}`;
-  if (!changeDay(day => ({ ...day, tasks: { ...day.tasks, [id]: { name, time } } }))) return;
-  resetTaskEditor();
+  if (!changeDay(day => ({ ...day, tasks: { ...day.tasks, [id]: task } }), taskEditorDate)) {
+    return editorError('task-message', '任务未保存，请检查设备存储空间。');
+  }
+  taskDialog.close();
   render();
-  byId('task-name').focus();
-});
-
-byId('task-cancel').addEventListener('click', () => {
-  resetTaskEditor();
-  byId('task-name').focus();
+  (editedTask ? list.querySelector(`[data-edit-task="${id}"]`) : byId('task-add'))?.focus({ preventScroll: true });
+  toast(editedTask ? '任务已更新' : '任务已添加');
 });
 
 list.addEventListener('click', event => {
@@ -37,31 +69,17 @@ list.addEventListener('click', event => {
   const id = button.dataset.editTask || button.dataset.deleteTask;
   const task = days[current]?.tasks?.[id];
   if (!task) return;
-  if (button.dataset.editTask) {
-    editedTask = id;
-    byId('task-name').value = task.name;
-    byId('task-time').value = task.time;
-    byId('task-submit').textContent = '保存任务';
-    byId('task-cancel').hidden = false;
-  } else if (confirm(`删除「${task.name}」？`)) {
-    if (!changeDay(day => {
-      const tasks = { ...day.tasks };
-      const checked = { ...day.checked };
-      delete tasks[id];
-      delete checked[id];
-      return { ...day, tasks, checked };
-    })) return;
-    if (editedTask === id) resetTaskEditor();
-    render();
-  } else return;
-  byId('task-name').focus();
+  if (button.dataset.editTask) return openTaskEditor(id);
+  if (!confirm(`删除「${task.name}」？`)) return;
+  if (!changeDay(day => {
+    const tasks = { ...day.tasks }, checked = { ...day.checked };
+    delete tasks[id];
+    delete checked[id];
+    return { ...day, tasks, checked };
+  })) return;
+  render();
+  byId('task-add').focus({ preventScroll: true });
 });
-
-const courseList = byId('custom-courses');
-const customCourseForm = byId('custom-course-form');
-const courseMessage = byId('custom-course-message');
-let editedCourse;
-let courseEditorDate = current;
 
 function coursesOn(date) {
   const result = {};
@@ -72,27 +90,46 @@ function coursesOn(date) {
   return result;
 }
 
-function resetCourseEditor() {
-  editedCourse = undefined;
-  customCourseForm.reset();
-  byId('custom-course-submit').textContent = '添加课程';
-  byId('custom-course-cancel').hidden = true;
-  courseMessage.textContent = '';
-}
+const saveCustomCourse = (id, course, date = current) =>
+  changeDay(day => ({ ...day, courses: { ...day.courses, [id]: course } }), date);
 
 function renderCustomCourses() {
-  if (courseEditorDate !== current) resetCourseEditor();
-  courseEditorDate = current;
+  if (courseDialog.open && courseEditorDate !== current) courseDialog.close();
   courseList.innerHTML = Object.entries(coursesOn(current)).filter(([, course]) => course).map(([id, course]) => `
-    <article class="custom-course">
-      <div class="custom-course-heading"><strong>${escapeHtml(course.name)}</strong><span>${course.done} / ${course.total}</span></div>
+    <article class="panel course-card custom-course">
+      <div class="panel-title"><h3 class="course-name">${escapeHtml(course.name)}</h3><span class="badge">自定义</span></div>
+      <p class="course-count"><strong>${course.done}</strong> / ${course.total} 讲</p>
       <progress aria-label="${escapeHtml(course.name)}进度" value="${course.done}" max="${course.total}"></progress>
-      <div class="task-actions"><button type="button" data-edit-course="${id}">编辑进度</button><button type="button" data-delete-course="${id}">归档</button></div>
-    </article>`).join('') || '<p class="hint">还没有自定义课程。</p>';
+      <p class="hint">${course.done === course.total ? '已完成全部课程。' : `下一讲 · 第 ${course.done + 1} 讲`}</p>
+      <form class="course-edit" data-course-progress="${id}">
+        <label for="progress-${id}">累计已学讲数</label>
+        <input id="progress-${id}" type="number" inputmode="numeric" min="0" max="${course.total}" step="1" value="${course.done}" required>
+        <button type="submit" class="btn secondary">保存</button>
+      </form>
+      <div class="task-actions"><button type="button" data-edit-course="${id}" aria-haspopup="dialog">编辑课程</button><button type="button" data-delete-course="${id}">归档</button></div>
+    </article>`).join('');
+  courseList.hidden = !courseList.firstElementChild;
 }
 
 document.addEventListener('study-course-change', renderCustomCourses);
 renderCustomCourses();
+
+function openCourseEditor(id) {
+  const course = coursesOn(current)[id];
+  editedCourse = id;
+  courseEditorDate = current;
+  customCourseForm.reset();
+  byId('course-dialog-title').textContent = course ? '编辑课程' : '添加课程';
+  byId('custom-course-submit').textContent = course ? '保存课程' : '添加课程';
+  byId('custom-course-name').value = course?.name || '';
+  byId('custom-course-total').value = course?.total ?? '';
+  byId('custom-course-done').value = course?.done ?? 0;
+  editorError('custom-course-message');
+  courseDialog.showModal();
+}
+
+byId('course-add').addEventListener('click', () => openCourseEditor());
+byId('custom-course-cancel').addEventListener('click', () => courseDialog.close());
 
 customCourseForm.addEventListener('submit', event => {
   event.preventDefault();
@@ -100,21 +137,27 @@ customCourseForm.addEventListener('submit', event => {
   const total = byId('custom-course-total').valueAsNumber;
   const done = byId('custom-course-done').valueAsNumber;
   if (!validTitle(name) || !validNumber(total) || total < 1 || total > 9999 || !validNumber(done) || done > total) {
-    courseMessage.textContent = '请填写课程名称，已完成课时须在 0 和总课时之间。';
-    return;
+    return editorError('custom-course-message', '请填写课程名称，已完成课时须在 0 和总课时之间。');
   }
   const id = editedCourse || crypto.randomUUID();
-  if (!changeDay(day => ({ ...day, courses: { ...day.courses, [id]: { name, total, done } } }))) return;
-  resetCourseEditor();
+  if (!saveCustomCourse(id, { name, total, done }, courseEditorDate)) {
+    return editorError('custom-course-message', '课程未保存，请检查设备存储空间。');
+  }
+  courseDialog.close();
   renderCustomCourses();
-  byId('course-editor-details').open = false;
-  byId('course-editor-details').querySelector('summary').focus();
-  toast('课程进度已保存');
+  (editedCourse ? courseList.querySelector(`[data-edit-course="${id}"]`) : byId('course-add'))?.focus({ preventScroll: true });
+  toast('课程已保存');
 });
 
-byId('custom-course-cancel').addEventListener('click', () => {
-  resetCourseEditor();
-  byId('custom-course-name').focus();
+courseList.addEventListener('submit', event => {
+  event.preventDefault();
+  const id = event.target.dataset.courseProgress;
+  const course = coursesOn(current)[id];
+  const done = event.target.querySelector('input').valueAsNumber;
+  if (!course || !validNumber(done) || done > course.total || !saveCustomCourse(id, { ...course, done })) return;
+  renderCustomCourses();
+  courseList.querySelector(`[data-course-progress="${id}"] button`)?.focus({ preventScroll: true });
+  toast('课程进度已保存');
 });
 
 courseList.addEventListener('click', event => {
@@ -123,22 +166,19 @@ courseList.addEventListener('click', event => {
   const id = button.dataset.editCourse || button.dataset.deleteCourse;
   const course = coursesOn(current)[id];
   if (!course) return;
-  if (button.dataset.editCourse) {
-    editedCourse = id;
-    byId('course-editor-details').open = true;
-    byId('custom-course-name').value = course.name;
-    byId('custom-course-total').value = course.total;
-    byId('custom-course-done').value = course.done;
-    byId('custom-course-submit').textContent = '保存课程';
-    byId('custom-course-cancel').hidden = false;
-    byId('custom-course-name').focus();
-  } else if (confirm(`从所选日期起归档「${course.name}」？之后已经保存的进度仍可查看。`) &&
-    changeDay(day => ({ ...day, courses: { ...day.courses, [id]: null } }))) {
-    if (editedCourse === id) resetCourseEditor();
+  if (button.dataset.editCourse) return openCourseEditor(id);
+  if (confirm(`从所选日期起归档「${course.name}」？之后已经保存的进度仍可查看。`) && saveCustomCourse(id, null)) {
     renderCustomCourses();
-    byId('course-editor-details').querySelector('summary').focus();
+    byId('course-add').focus({ preventScroll: true });
   }
 });
+
+for (const eventName of ['popstate', 'hashchange']) {
+  window.addEventListener(eventName, () => {
+    if (taskDialog.open && location.hash && location.hash !== '#tasks') taskDialog.close();
+    if (courseDialog.open && location.hash !== '#course') courseDialog.close();
+  });
+}
 
 const cover = document.querySelector('.cover');
 const coverKey = `${storageKey}:cover`;

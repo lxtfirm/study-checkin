@@ -140,28 +140,30 @@ function renderProgress(day) {
 
 const escapeHtml = value => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 
-function taskSection(title, number, tasks, day) {
+function taskSection(title, number, tasks, day, editable = false) {
   const items = tasks.map(([id, time, name, description]) => {
     if (!id) return `<li class="rest"><span class="time">${time}</span><span>${name}</span></li>`;
     const checked = day.checked?.[id] ? 'checked' : '';
     return `<li><label class="task">
       <input type="checkbox" data-task="${id}" aria-labelledby="task-${id}" ${checked}>
       <span class="check" aria-hidden="true">✓</span>
-      <span class="taskbody"><span class="taskname" id="task-${id}">${escapeHtml(name)}</span>${description ? `<span class="taskdesc">${description}</span>` : ''}</span>
+      <span class="taskbody"><span class="taskname" id="task-${id}">${escapeHtml(name)}</span>${description ? `<span class="taskdesc">${escapeHtml(description)}</span>` : ''}</span>
       <span class="time">${time}</span>
-    </label>${number ? '' : `<div class="task-actions"><button type="button" data-edit-task="${id}" aria-label="编辑 ${escapeHtml(name)}">编辑</button><button type="button" data-delete-task="${id}" aria-label="删除 ${escapeHtml(name)}">删除</button></div>`}</li>`;
+    </label>${editable ? `<div class="task-actions"><button type="button" data-edit-task="${id}" aria-haspopup="dialog" aria-label="编辑 ${escapeHtml(name)}">编辑</button><button type="button" data-delete-task="${id}" aria-label="删除 ${escapeHtml(name)}">删除</button></div>` : ''}</li>`;
   });
-  return `<section class="task-group"><h3>${number ? `<span>${number}</span>` : ''}${title}</h3><ol>${items.join('')}</ol></section>`;
+  return `<section class="task-group"><h3><span>${number}</span>${escapeHtml(title)}</h3><ol>${items.join('')}</ol></section>`;
 }
 
 function renderPlan(day) {
   const mode = modeOf(day);
   for (const button of modeButtons) button.setAttribute('aria-pressed', button.dataset.mode === mode);
   byId('mode-hint').textContent = { lecture: '理解新知识，复现例题，少量练习。', practice: '回顾已学知识，独立做题，整理错题。', custom: '为所选日期安排任务。' }[mode];
-  byId('task-editor').hidden = mode !== 'custom';
+  byId('task-add').hidden = mode !== 'custom';
   byId('progress-mode').textContent = mode === 'custom' ? '自定义计划' : '数学 · 英语一';
   byId('plan-window').textContent = mode === 'custom' ? '按你的节奏' : '14:30–22:30';
-  list.innerHTML = mode === 'custom' ? taskSection('自定义任务', '', customTasks(day), day) : taskSection('下午 · 高数', '01', mathTasks(day), day) +
+  list.innerHTML = mode === 'custom' ? (customGroups(day).map(([title, tasks], index) =>
+    taskSection(title, String(index + 1).padStart(2, '0'), tasks, day, true)).join('') ||
+    '<p class="custom-empty">这一天还没有自定义任务。</p>') : taskSection('下午 · 高数', '01', mathTasks(day), day) +
     taskSection('晚上 · 英语一', '02', english, day) + taskSection('晚间 · 复盘与收尾', '03', review, day);
   document.dispatchEvent(new Event('study-plan-change'));
 }

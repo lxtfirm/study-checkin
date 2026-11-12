@@ -118,40 +118,30 @@
             <button type="button" class="mode" data-mode="practice" aria-pressed="false">巩固日</button>
             <button type="button" class="mode" data-mode="custom" aria-pressed="false">自定义</button>
           </div>
-          <p class="hint" id="mode-hint"></p>
-          <form class="editor" id="task-editor" hidden>
-            <label for="task-name">任务名称</label><input id="task-name" maxlength="80" required>
-            <label for="task-time">开始时间（可选）</label><input id="task-time" type="time">
-            <div class="actions"><button class="btn" id="task-submit">添加任务</button><button class="btn secondary" id="task-cancel" type="button" hidden>取消编辑</button></div>
-          </form>
+          <div class="mode-toolbar"><p class="hint" id="mode-hint"></p>
+            <button type="button" class="btn secondary" id="task-add" aria-haspopup="dialog" hidden>＋ 添加任务</button>
+          </div>
           <div id="list"></div>
         </section>
       </div>
-        <section class="panel" id="course" data-view="course" hidden aria-labelledby="course-title">
-          <div class="panel-title"><h2 id="course-title">课程进度</h2><span class="badge">高数</span></div>
-          <p class="course-name">张宇《基础30讲》</p>
-          <p class="course-count"><strong id="course-count">0</strong> / 30 讲</p>
-          <progress id="course-progress" max="30" value="0" aria-label="基础30讲已学讲数"></progress>
-          <p class="hint" id="course-next"></p>
-          <form class="course-edit" id="course-form">
-            <label for="course-input">累计已学讲数</label>
-            <input id="course-input" type="number" inputmode="numeric" min="0" max="30" step="1" required>
-            <button type="submit" class="btn secondary">保存</button>
-          </form>
-          <div class="section"><h3>自定义课程</h3></div>
-          <div id="custom-courses"></div>
-          <details class="custom-course-editor" id="course-editor-details">
-            <summary>添加或编辑课程</summary>
-            <form class="editor" id="custom-course-form">
-              <label for="custom-course-name">课程名称</label><input id="custom-course-name" maxlength="80" required>
-              <div class="editor-pair">
-                <label>总课时<input id="custom-course-total" type="number" min="1" max="9999" inputmode="numeric" required></label>
-                <label>已完成<input id="custom-course-done" type="number" min="0" max="9999" value="0" inputmode="numeric" required></label>
-              </div>
-              <div class="actions"><button class="btn" id="custom-course-submit">添加课程</button><button class="btn secondary" id="custom-course-cancel" type="button" hidden>取消编辑</button></div>
-              <p class="hint" id="custom-course-message" role="status"></p>
-            </form>
-          </details>
+        <section id="course" data-view="course" hidden aria-labelledby="course-title">
+          <div class="view-heading"><h2 id="course-title">课程进度</h2>
+            <button type="button" class="btn secondary" id="course-add" aria-haspopup="dialog">＋ 添加课程</button>
+          </div>
+          <div class="course-cards">
+            <article class="panel course-card">
+              <div class="panel-title"><h3 class="course-name">张宇《基础30讲》</h3><span class="badge">高数</span></div>
+              <p class="course-count"><strong id="course-count">0</strong> / 30 讲</p>
+              <progress id="course-progress" max="30" value="0" aria-label="基础30讲已学讲数"></progress>
+              <p class="hint" id="course-next"></p>
+              <form class="course-edit" id="course-form">
+                <label for="course-input">累计已学讲数</label>
+                <input id="course-input" type="number" inputmode="numeric" min="0" max="30" step="1" required>
+                <button type="submit" class="btn secondary">保存</button>
+              </form>
+            </article>
+            <div id="custom-courses" class="course-cards"></div>
+          </div>
         </section>
         <section class="panel focus-panel" id="focus" data-view="focus" hidden aria-labelledby="focus-title">
           <div class="panel-title"><h2 id="focus-title" tabindex="-1">专注计时</h2><span class="badge" id="focus-badge">今天</span></div>
@@ -256,5 +246,37 @@
     <footer>考研打卡 · 2028</footer>
   </div>
   <div class="toast" id="toast" role="status"></div>
+  <dialog class="edit-sheet" id="task-dialog" aria-labelledby="task-dialog-title">
+    <h2 id="task-dialog-title" tabindex="-1" autofocus>添加任务</h2>
+    <p class="hint" id="task-dialog-date"></p>
+    <form class="editor" id="task-editor">
+      <label for="task-name">任务标题<input id="task-name" maxlength="80" placeholder="例如：极限基础练习" required></label>
+      <label for="task-description">副标题（可选）<input id="task-description" maxlength="160" placeholder="例如：独立完成第 1–5 题"></label>
+      <div class="editor-grid">
+        <label for="task-time">开始时间<input id="task-time" type="time" required></label>
+        <label for="task-end">结束时间<input id="task-end" type="time" required></label>
+      </div>
+      <div class="editor-grid">
+        <label for="task-period">时间段<select id="task-period"><option value="">按开始时间</option><option value="morning">上午</option><option value="afternoon">下午</option><option value="evening">晚上</option></select></label>
+        <label for="task-subject">科目<input id="task-subject" maxlength="24" placeholder="例如：高数" list="task-subjects"></label>
+      </div>
+      <datalist id="task-subjects"><option value="高数"></option><option value="英语一"></option><option value="专业课"></option><option value="复盘"></option></datalist>
+      <p class="editor-error" id="task-message" role="status" hidden></p>
+      <div class="actions"><button type="button" class="btn secondary" id="task-cancel">取消</button><button class="btn" id="task-submit">添加任务</button></div>
+    </form>
+  </dialog>
+  <dialog class="edit-sheet" id="course-dialog" aria-labelledby="course-dialog-title">
+    <h2 id="course-dialog-title" tabindex="-1" autofocus>添加课程</h2>
+    <p class="hint">从所选日期开始记录这门课程。</p>
+    <form class="editor" id="custom-course-form">
+      <label for="custom-course-name">课程名称<input id="custom-course-name" maxlength="80" required></label>
+      <div class="editor-grid">
+        <label for="custom-course-total">总课时<input id="custom-course-total" type="number" min="1" max="9999" inputmode="numeric" required></label>
+        <label for="custom-course-done">已完成<input id="custom-course-done" type="number" min="0" max="9999" value="0" inputmode="numeric" required></label>
+      </div>
+      <p class="editor-error" id="custom-course-message" role="status" hidden></p>
+      <div class="actions"><button type="button" class="btn secondary" id="custom-course-cancel">取消</button><button class="btn" id="custom-course-submit">添加课程</button></div>
+    </form>
+  </dialog>
 </body>
 </html>

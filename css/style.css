@@ -237,12 +237,24 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 6px 
 .exam-countdown .course-edit { margin-top: 2px; }
 .exam-countdown .hint { margin: 8px 0 12px; }
 .poem blockquote { margin: 3px 0 4px; font-size: clamp(20px, 4.8vw, 31px); line-height: 1.45; }
-.course-name { margin-top: 9px; color: var(--muted); font-size: 14px; }
+.view-heading, .mode-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+.view-heading { margin-bottom: 12px; }
+.view-heading h2 { font-size: 20px; }
+.view-heading .btn, .mode-toolbar .btn { flex: none; }
+.mode-toolbar { margin: 8px 0; }
+.mode-toolbar .hint { margin: 0; }
+.custom-empty { margin: 12px 0; padding: 15px; border: 1px dashed var(--edge); border-radius: 14px; color: var(--muted); font-size: 14px; }
+.course-cards { display: grid; gap: 12px; min-width: 0; }
+.course-card { min-width: 0; margin-bottom: 0; }
+.course-card .panel-title { align-items: start; }
+.course-card .badge { flex: none; }
+.course-name { min-width: 0; overflow-wrap: anywhere; font-size: 18px; line-height: 1.4; }
 .course-count { color: var(--muted); font-size: 14px; }
 .course-count strong { color: var(--ink); font-size: 34px; font-variant-numeric: tabular-nums; }
-#course-progress { display: block; width: 100%; height: 8px; border: 0; border-radius: 99px; background: var(--soft); accent-color: var(--green); }
-#course-progress::-webkit-progress-bar { border-radius: 99px; background: var(--soft); }
-#course-progress::-webkit-progress-value { border-radius: 99px; background: var(--green); }
+.course-card progress { display: block; width: 100%; height: 8px; border: 0; border-radius: 99px; background: var(--soft); accent-color: var(--green); }
+.course-card progress::-webkit-progress-bar { border-radius: 99px; background: var(--soft); }
+.course-card progress::-webkit-progress-value { border-radius: 99px; background: var(--green); }
+.course-card progress::-moz-progress-bar { border-radius: 99px; background: var(--green); }
 .course-edit { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; margin-top: 12px; }
 .course-edit label { grid-column: 1 / -1; }
 .course-edit label, .focus-options label { color: var(--muted); font-size: 13px; font-weight: 650; }
@@ -318,19 +330,37 @@ body:has(.study-dock[data-section="focus"]) { --mini-height: 0px; }
 .cover.has-cover-image .cover-art { visibility: hidden; }
 .cover.has-cover-image::after { background: linear-gradient(95deg, #edf4ffdc, #edf4ff91); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .cover-settings { margin: 0 clamp(20px, 4vw, 40px) 16px; }
-.cover-settings summary, .custom-course-editor summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: 13px; font-weight: 700; color: inherit; }
+.cover-settings summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: 13px; font-weight: 700; color: inherit; }
 .cover-settings-body { padding: 10px; border-radius: 14px; background: var(--surface); color: var(--ink); }
 .cover-settings input { width: 100%; min-height: 44px; max-width: 100%; font-size: 16px; }
 .editor { display: grid; gap: 8px; min-width: 0; margin: 8px 0 12px; }
 .editor label { min-width: 0; color: var(--muted); font-size: 13px; font-weight: 650; }
-.editor input { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 6px 9px; border: 1px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.editor input, .editor select { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 6px 9px; border: 1px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
 .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .editor .actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.custom-course { margin: 12px 0; padding: 12px; border: 1px solid var(--edge); border-radius: 14px; background: var(--soft); }
-.custom-course-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.custom-course-heading strong, .task strong, .editor .hint { min-width: 0; overflow-wrap: anywhere; }
-.custom-course-heading span { flex: none; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
-.custom-course progress { width: 100%; accent-color: var(--blue); }
+.editor-error { color: var(--warning); font-size: 13px; overflow-wrap: anywhere; }
+.edit-sheet {
+  position: fixed; inset: 0; width: min(480px, calc(100% - 24px));
+  max-height: min(90vh, 640px); max-height: min(90dvh, 640px);
+  margin: auto; padding: 20px; overflow: auto; overscroll-behavior: contain;
+  border: 1px solid var(--edge); border-radius: 24px;
+  background: var(--surface); color: var(--ink); box-shadow: 0 14px 50px #17294438;
+}
+.edit-sheet[open] { animation: sheet-in .24s cubic-bezier(.2, .7, .3, 1) both; }
+.edit-sheet::backdrop { background: #17253659; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.edit-sheet h2 { font-size: 20px; }
+.edit-sheet h2:focus { outline: none; }
+.edit-sheet .editor { gap: 11px; margin-bottom: 0; }
+.edit-sheet .editor label > :is(input, select) { margin-top: 3px; font-weight: 400; }
+.edit-sheet .editor input[type="time"] { -webkit-appearance: none; appearance: none; }
+.edit-sheet .editor input[type="time"]::-webkit-date-and-time-value { min-width: 0; text-align: start; }
+.edit-sheet .actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); margin-top: 3px; }
+body:has(.edit-sheet[open]) { overflow: hidden; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(36px); } }
+@media (max-width: 560px) {
+  .edit-sheet { inset: auto 0 0; margin: 0 auto; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) { .edit-sheet[open] { animation: none; } }
 .task-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .task-actions button { min-height: 44px; padding: 5px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--blue); font-size: 13px; font-weight: 650; }
 @media (prefers-color-scheme: dark) {

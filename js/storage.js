@@ -6,6 +6,14 @@ const isObject = value => value !== null && typeof value === 'object' && !Array.
 const validNumber = value => Number.isSafeInteger(value) && value >= 0;
 const validTitle = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 80;
 const validTime = value => typeof value === 'string' && (value === '' || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value));
+const optionalText = (value, max) => value === undefined || (typeof value === 'string' && value.length <= max);
+const validTaskRange = (time, end) => validTime(time) && (end === undefined || end === '' || (validTime(end) && !!time && end > time));
+
+function validCustomTask(task) {
+  return isObject(task) && validTitle(task.name) && validTaskRange(task.time, task.end) &&
+    optionalText(task.description, 160) && optionalText(task.subject, 24) &&
+    (task.period === undefined || ['', 'morning', 'afternoon', 'evening'].includes(task.period));
+}
 
 function validateDay(day) {
   if (!isObject(day)) throw new Error('日期记录必须是对象。');
@@ -23,8 +31,9 @@ function validateDay(day) {
     } else if (field === 'course' && validNumber(value) && value <= 30) {
       result.course = value;
     } else if (field === 'tasks' && isObject(value) && Object.entries(value).every(([id, task]) =>
-      id.startsWith('t-') && validTaskId(id) && isObject(task) && validTitle(task.name) && validTime(task.time))) {
-      result.tasks = Object.fromEntries(Object.entries(value).map(([id, { name, time }]) => [id, { name, time }]));
+      id.startsWith('t-') && validTaskId(id) && validCustomTask(task))) {
+      result.tasks = Object.fromEntries(Object.entries(value).map(([id, { name, time, end, description, period, subject }]) =>
+        [id, { name, time, ...(end && { end }), ...(description && { description }), ...(period && { period }), ...(subject && { subject }) }]));
     } else if (field === 'courses' && isObject(value) && Object.entries(value).every(([id, course]) =>
       customId(id) && (course === null || (isObject(course) && validTitle(course.name) &&
         validNumber(course.total) && course.total > 0 && course.total <= 9999 && validNumber(course.done) && course.done <= course.total)))) {
