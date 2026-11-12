@@ -22,7 +22,7 @@ function validateDay(day) {
       result.course = value;
     } else if (field === 'focus' && isObject(value) && Object.entries(value).every(([id, session]) =>
       /^[\da-f-]{36}$/.test(id) && isObject(session) && taskIds.has(session.task) &&
-      validNumber(session.seconds) && session.seconds > 0 && session.seconds <= 2700)) {
+      validNumber(session.seconds) && session.seconds > 0)) {
       result.focus = Object.fromEntries(Object.entries(value).map(([id, { task, seconds }]) => [id, { task, seconds }]));
     } else {
       throw new Error(`字段 ${field} 的格式有误。`);

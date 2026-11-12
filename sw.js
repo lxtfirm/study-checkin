@@ -1,5 +1,5 @@
 // Bump the version whenever a cached app file changes.
-const version = 'v6';
+const version = 'v7';
 const base = self.registration.scope;
 const prefix = `study-checkin:${base}:`;
 const cacheName = prefix + version;
@@ -8,6 +8,17 @@ const shell = [
   './index.html', './css/style.css', './js/schedule.js', './js/storage.js', './js/app.js', './js/focus.js',
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './fonts/poem.woff2',
 ].map(path => new URL(path, base).href);
+
+self.addEventListener('notificationclick', event => {
+  if (!event.notification.tag.startsWith('study-focus-')) return;
+  event.notification.close();
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = windows.find(client => client.url.startsWith(base));
+    if (existing) await existing.focus();
+    else await self.clients.openWindow(new URL('./#focus', base).href);
+  })());
+});
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache =>

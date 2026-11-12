@@ -246,11 +246,17 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 6px 
 .course-edit { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; margin-top: 12px; }
 .course-edit label { grid-column: 1 / -1; }
 .course-edit label, .focus-options label { color: var(--muted); font-size: 13px; font-weight: 650; }
-.course-edit input, .focus-options select { display: block; width: 100%; min-width: 0; min-height: 44px; padding: 6px 8px; border: 1px solid var(--edge); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.course-edit input, .focus-options select, .focus-options input { display: block; width: 100%; min-width: 0; min-height: 44px; padding: 6px 8px; border: 1px solid var(--edge); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
 .focus-panel { background: var(--soft); }
 .focus-panel .badge { background: var(--surface); }
 .focus-options { display: grid; grid-template-columns: minmax(0, 1fr) minmax(92px, .45fr); gap: 8px; margin-top: 12px; }
-.focus-options select { margin-top: 4px; }
+.focus-options select, .focus-options input { margin-top: 4px; }
+.focus-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.focus-presets .btn, .focus-reminder .btn { background: var(--surface); }
+.focus-reminder { margin-top: 14px; }
+.focus-alert { position: fixed; z-index: 7; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(calc(100% - 32px), 440px); display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 10px; border: 1px solid var(--edge); border-radius: 16px; background: var(--surface); box-shadow: 0 8px 24px #17294440; }
+.focus-alert p { min-width: 0; overflow-wrap: anywhere; padding-left: 4px; font-weight: 650; }
+.focus-alert .btn { flex: none; }
 .clock { padding: 6px 0 0; font-size: clamp(44px, 9vw, 64px); text-align: center; letter-spacing: -.055em; font-weight: 750; font-variant-numeric: tabular-nums; }
 .focus-status { min-height: 1.7em; text-align: center; }
 .history-focus { text-align: right; color: var(--muted); font-size: 11px; }

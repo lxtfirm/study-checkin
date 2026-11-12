@@ -28,6 +28,10 @@
     <noscript><p class="notice">请启用 JavaScript 以使用打卡和本地保存。</p></noscript>
     <p class="notice" id="storage-error" role="alert" hidden></p>
     <button class="notice update" id="update" type="button" hidden>新版本已就绪，点此更新</button>
+    <div class="focus-alert" id="focus-alert" hidden>
+      <p id="focus-alert-message" role="alert"></p>
+      <button class="btn secondary" id="focus-alert-dismiss" type="button">知道了</button>
+    </div>
     <section class="cover" data-view="tasks" aria-labelledby="greeting">
       <svg class="cover-art" viewBox="0 0 640 240" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
         <circle cx="454" cy="78" r="38" fill="#f2c3ba" opacity=".58"/>
@@ -122,7 +126,12 @@
           <div class="panel-title"><h2 id="focus-title" tabindex="-1">专注计时</h2><span class="badge" id="focus-badge">今天</span></div>
           <div class="focus-options">
             <label>专注任务<select id="focus-task"></select></label>
-            <label>时长<select id="focus-duration"><option value="15">15 分钟</option><option value="25" selected>25 分钟</option><option value="45">45 分钟</option></select></label>
+            <label>时长（分钟）<input id="focus-duration" type="number" inputmode="numeric" min="1" step="1" value="25" required></label>
+          </div>
+          <div class="focus-presets" role="group" aria-label="时长快捷选项">
+            <button class="btn secondary" type="button" data-focus-minutes="15">15 分钟</button>
+            <button class="btn secondary" type="button" data-focus-minutes="25">25 分钟</button>
+            <button class="btn secondary" type="button" data-focus-minutes="45">45 分钟</button>
           </div>
           <div class="clock" id="focus-clock" role="timer">25:00</div>
           <p class="hint focus-status" id="focus-status" role="status">选一项任务，留一段时间给它。</p>
@@ -130,6 +139,10 @@
             <button class="btn" id="focus-toggle" type="button">开始专注</button>
             <button class="btn secondary" id="focus-finish" type="button" hidden>结束并记录</button>
             <button class="btn secondary" id="focus-check" type="button" hidden>勾选关联任务</button>
+          </div>
+          <div class="focus-reminder">
+            <button class="btn secondary" id="focus-notifications" type="button">开启系统通知</button>
+            <p class="hint" id="focus-notification-status" role="status"></p>
           </div>
         </section>
         <section class="panel" id="history" data-view="history" hidden aria-labelledby="history-title">
