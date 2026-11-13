@@ -124,6 +124,7 @@ main { min-width: 0; }
 .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 4px; gap: 4px; border-radius: 15px; background: var(--soft); }
 .mode { min-height: 44px; padding: 7px; border: 1px solid transparent; border-radius: 11px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 700; }
 .mode[aria-pressed="true"] { background: var(--surface); color: var(--blue); border-color: var(--edge); box-shadow: var(--shadow); }
+.mode, #progress-mode { min-width: 0; overflow-wrap: anywhere; }
 .plan > .hint { margin: 8px 1px 16px; }
 .task-group { margin-top: 18px; }
 .task-group h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 15px; }
@@ -243,6 +244,7 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 6px 
 .view-heading .btn, .mode-toolbar .btn { flex: none; }
 .mode-toolbar { margin: 8px 0; }
 .mode-toolbar .hint { margin: 0; }
+.plan-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .custom-empty { margin: 12px 0; padding: 15px; border: 1px dashed var(--edge); border-radius: 14px; color: var(--muted); font-size: 14px; }
 .course-cards { display: grid; gap: 12px; min-width: 0; }
 .course-card { min-width: 0; margin-bottom: 0; }
@@ -328,7 +330,14 @@ body:has(.study-dock[data-section="focus"]) { --mini-height: 0px; }
 
 .cover.has-cover-image { background-image: var(--cover-image); background-size: cover; background-position: center; }
 .cover.has-cover-image .cover-art { visibility: hidden; }
-.cover.has-cover-image::after { background: linear-gradient(95deg, #edf4ffdc, #edf4ff91); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.cover.has-cover-image::after {
+  background: linear-gradient(100deg, #edf4ffe0 0%, #edf4ffd0 38%, #edf4ff98 66%, #edf4ff24 100%);
+  -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px);
+}
+.cover.has-cover-image .cover-copy { text-shadow: 0 0 9px #f7faff, 0 0 3px #f7faff; }
+.cover.has-cover-image .cover-settings summary {
+  width: fit-content; padding: 10px 12px; border-radius: 10px; background: var(--surface);
+}
 .cover-settings { margin: 0 clamp(20px, 4vw, 40px) 16px; }
 .cover-settings summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: 13px; font-weight: 700; color: inherit; }
 .cover-settings-body { padding: 10px; border-radius: 14px; background: var(--surface); color: var(--ink); }
@@ -352,6 +361,8 @@ body:has(.study-dock[data-section="focus"]) { --mini-height: 0px; }
 .edit-sheet h2:focus { outline: none; }
 .edit-sheet .editor { gap: 11px; margin-bottom: 0; }
 .edit-sheet .editor label > :is(input, select) { margin-top: 3px; font-weight: 400; }
+.edit-sheet .editor .task-kind { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.edit-sheet .editor #task-rest { width: 20px; min-height: 20px; margin: 0; accent-color: var(--blue); }
 .edit-sheet .editor input[type="time"] { -webkit-appearance: none; appearance: none; }
 .edit-sheet .editor input[type="time"]::-webkit-date-and-time-value { min-width: 0; text-align: start; }
 .edit-sheet .actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); margin-top: 3px; }
@@ -364,7 +375,8 @@ body:has(.edit-sheet[open]) { overflow: hidden; }
 .task-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .task-actions button { min-height: 44px; padding: 5px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--blue); font-size: 13px; font-weight: 650; }
 @media (prefers-color-scheme: dark) {
-  .cover.has-cover-image::after { background: linear-gradient(95deg, #142238ec, #142238a8); }
+  .cover.has-cover-image::after { background: linear-gradient(100deg, #142238ec 0%, #142238d9 38%, #1422389e 66%, #14223828 100%); }
+  .cover.has-cover-image .cover-copy { text-shadow: 0 0 9px #142238, 0 0 3px #142238; }
 }
 #records { margin-top: 19px; }
 #records summary { min-height: 44px; padding: 12px 15px; border-radius: 14px; background: var(--surface); border: 1px solid var(--edge); color: var(--blue); font-weight: 650; cursor: pointer; }

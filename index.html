@@ -114,12 +114,15 @@
         <section class="plan" aria-labelledby="plan-title">
           <div class="section"><h2 id="plan-title">任务清单</h2><span id="plan-window">14:30–22:30</span></div>
           <div class="modes" role="group" aria-label="学习模式">
-            <button type="button" class="mode" data-mode="lecture" aria-pressed="true">网课日</button>
-            <button type="button" class="mode" data-mode="practice" aria-pressed="false">巩固日</button>
+            <button type="button" class="mode" data-mode="lecture" aria-pressed="true">常规任务1</button>
+            <button type="button" class="mode" data-mode="practice" aria-pressed="false">常规任务2</button>
             <button type="button" class="mode" data-mode="custom" aria-pressed="false">自定义</button>
           </div>
           <div class="mode-toolbar"><p class="hint" id="mode-hint"></p>
-            <button type="button" class="btn secondary" id="task-add" aria-haspopup="dialog" hidden>＋ 添加任务</button>
+            <div class="plan-actions">
+              <button type="button" class="btn secondary" id="routine-name" aria-haspopup="dialog">改计划名称</button>
+              <button type="button" class="btn secondary" id="task-add" aria-haspopup="dialog">＋ 添加任务</button>
+            </div>
           </div>
           <div id="list"></div>
         </section>
@@ -246,6 +249,15 @@
     <footer>考研打卡 · 2028</footer>
   </div>
   <div class="toast" id="toast" role="status"></div>
+  <dialog class="edit-sheet" id="routine-dialog" aria-labelledby="routine-dialog-title">
+    <h2 id="routine-dialog-title" tabindex="-1" autofocus>改计划名称</h2>
+    <p class="hint">名称和任务清单从今天起沿用，历史记录保留原样。</p>
+    <form class="editor" id="routine-editor">
+      <label>计划名称<input id="routine-name-input" maxlength="16" required></label>
+      <p class="editor-error" id="routine-message" role="status" hidden></p>
+      <div class="actions"><button type="button" class="btn secondary" id="routine-cancel">取消</button><button class="btn">保存名称</button></div>
+    </form>
+  </dialog>
   <dialog class="edit-sheet" id="task-dialog" aria-labelledby="task-dialog-title">
     <h2 id="task-dialog-title" tabindex="-1" autofocus>添加任务</h2>
     <p class="hint" id="task-dialog-date"></p>
@@ -261,6 +273,7 @@
         <label for="task-subject">科目<input id="task-subject" maxlength="24" placeholder="例如：高数" list="task-subjects"></label>
       </div>
       <datalist id="task-subjects"><option value="高数"></option><option value="英语一"></option><option value="专业课"></option><option value="复盘"></option></datalist>
+      <label class="task-kind" id="task-kind" hidden><input id="task-rest" type="checkbox">设为休息，不计入学习进度</label>
       <p class="editor-error" id="task-message" role="status" hidden></p>
       <div class="actions"><button type="button" class="btn secondary" id="task-cancel">取消</button><button class="btn" id="task-submit">添加任务</button></div>
     </form>

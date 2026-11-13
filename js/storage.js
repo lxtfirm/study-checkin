@@ -5,6 +5,7 @@ const backupFormat = 'study-checkin';
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const validNumber = value => Number.isSafeInteger(value) && value >= 0;
 const validTitle = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 80;
+const validRoutineName = value => validTitle(value) && value.length <= 16;
 const validTime = value => typeof value === 'string' && (value === '' || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value));
 const optionalText = (value, max) => value === undefined || (typeof value === 'string' && value.length <= max);
 const validTaskRange = (time, end) => validTime(time) && (end === undefined || end === '' || (validTime(end) && !!time && end > time));
@@ -15,12 +16,28 @@ function validCustomTask(task) {
     (task.period === undefined || ['', 'morning', 'afternoon', 'evening'].includes(task.period));
 }
 
+function validateRoutinePlans(plans) {
+  if (!isObject(plans)) throw new Error('常规计划格式有误。');
+  return Object.fromEntries(Object.entries(plans).map(([mode, plan]) => {
+    if (!Object.hasOwn(routineModes, mode) || !isObject(plan) || !validRoutineName(plan.name) ||
+        !isObject(plan.tasks)) throw new Error('常规计划格式有误。');
+    const tasks = Object.fromEntries(Object.entries(plan.tasks).map(([id, task]) => {
+      if (!validTaskId(id) || !validCustomTask(task) || typeof task.rest !== 'boolean') throw new Error('常规任务格式有误。');
+      const { name, time, end, description, period, subject, rest } = task;
+      return [id, { name, time, end, description, period, subject, rest }];
+    }));
+    return [mode, { name: plan.name, tasks }];
+  }));
+}
+
 function validateDay(day) {
   if (!isObject(day)) throw new Error('日期记录必须是对象。');
   const result = {};
   for (const [field, value] of Object.entries(day)) {
     if (field === 'mode' && ['lecture', 'practice', 'custom'].includes(value)) {
       result.mode = value;
+    } else if (field === 'routinePlans') {
+      result.routinePlans = validateRoutinePlans(value);
     } else if (field === 'checked' && isObject(value) &&
       Object.entries(value).every(([id, checked]) => validTaskId(id) && typeof checked === 'boolean')) {
       result.checked = { ...value };

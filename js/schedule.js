@@ -31,19 +31,21 @@ const review = [
 
 const taskIds = new Set([...lecture, ...practice, ...english, ...review].map(([id]) => id).filter(Boolean));
 const customId = id => typeof id === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(id);
-const validTaskId = id => taskIds.has(id) || (typeof id === 'string' && id.startsWith('t-') && customId(id.slice(2)));
+const validTaskId = id => taskIds.has(id) || restTaskId(id) ||
+  (typeof id === 'string' && id.startsWith('t-') && customId(id.slice(2)));
 const modeOf = day => day?.mode || 'lecture';
-const mathTasks = day => modeOf(day) === 'practice' ? practice : lecture;
+const routineModes = Object.freeze({ lecture: '常规任务1', practice: '常规任务2' });
+const restTaskId = id => /^rest-(lecture|practice)-[0-9]+$/.test(id);
 const taskPeriods = Object.freeze({ morning: '上午', afternoon: '下午', evening: '晚上', unset: '未分时段' });
 const taskPeriod = ({ period, time }) => period || (!time ? 'unset' : time < '12:00' ? 'morning' : time < '18:00' ? 'afternoon' : 'evening');
-const customTasks = day => Object.entries(day?.tasks || {})
+const taskRows = (tasks = {}) => Object.entries(tasks)
   .sort(([, a], [, b]) => (a.time || '24:00').localeCompare(b.time || '24:00'))
   .map(([id, task]) => [id, task.end ? `${task.time}–${task.end}` : task.time, task.name,
     task.description || '', taskPeriod(task), task.subject || '']);
 
-function customGroups(day) {
+function taskGroups(tasks) {
   const groups = new Map();
-  for (const task of customTasks(day)) {
+  for (const task of taskRows(tasks)) {
     const [, , , , period, subject] = task;
     const title = `${taskPeriods[period]} · ${subject || '其他'}`;
     if (!groups.has(period)) groups.set(period, new Map());
@@ -53,10 +55,37 @@ function customGroups(day) {
   }
   return Object.keys(taskPeriods).flatMap(period => [...(groups.get(period) || [])]);
 }
-const studyTasks = day => modeOf(day) === 'custom' ? customTasks(day) : [...mathTasks(day), ...english, ...review].filter(([id]) => id);
 
-function completion(day) {
-  const tasks = studyTasks(day);
+function defaultRoutine(mode) {
+  let rest = 0;
+  const tasks = [[mode === 'practice' ? practice : lecture, 'afternoon', '高数'],
+    [english, 'evening', '英语一'], [review, 'evening', '复盘与收尾']];
+  return { name: routineModes[mode], tasks: Object.fromEntries(tasks.flatMap(([rows, period, subject]) =>
+    rows.map(([id, range, name, description]) => {
+      const [time, end] = range.split('–');
+      return [id ?? `rest-${mode}-${++rest}`, { name, time, end, description, period, subject, rest: !id }];
+    }))) };
+}
+
+function routineOn(mode, date, records) {
+  const latest = Object.keys(records).filter(key => key <= date && records[key].routinePlans?.[mode]).sort().at(-1);
+  return latest ? records[latest].routinePlans[mode] : defaultRoutine(mode);
+}
+
+function tasksOn(date, records) {
+  const day = records[date];
+  const mode = modeOf(day);
+  return mode === 'custom' ? day?.tasks : routineOn(mode, date, records).tasks;
+}
+
+function studyTasks(date, records) {
+  const tasks = tasksOn(date, records);
+  return taskRows(tasks).filter(([id]) => !tasks[id].rest);
+}
+
+function completion(date, records) {
+  const day = records[date];
+  const tasks = studyTasks(date, records);
   const done = tasks.filter(([id]) => day?.checked?.[id]).length;
   return { done, total: tasks.length, percent: tasks.length ? Math.round(done / tasks.length * 100) : 0 };
 }
@@ -84,14 +113,14 @@ function weekStats(days, today) {
   let focused = 0;
   for (const [key, day] of Object.entries(days)) {
     if (key >= monday && key <= today) {
-      week += completion(day).done;
+      week += completion(key, days).done;
       focused += focusSeconds(day);
     }
   }
   // An unfinished today can still extend yesterday's streak.
-  let key = completion(days[today]).done ? today : moveDay(today, -1);
+  let key = completion(today, days).done ? today : moveDay(today, -1);
   let streak = 0;
-  while (completion(days[key]).done) {
+  while (completion(key, days).done) {
     streak++;
     key = moveDay(key, -1);
   }

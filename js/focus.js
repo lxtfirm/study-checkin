@@ -126,14 +126,14 @@ function writeTimer(timer) {
 }
 
 const remainingTime = timer => timer.ends === null ? timer.remaining : Math.max(0, Math.min(timer.remaining, timer.ends - Date.now()));
-const focusTasks = () => studyTasks(days[today]);
+const focusTasks = () => studyTasks(today, days);
 
 function refreshFocusOptions(timer) {
   const previous = taskSelect.value;
   const tasks = focusTasks();
   if (timer && !tasks.some(([id]) => id === timer.task)) {
     const task = [...lecture, ...practice, ...english, ...review].find(([id]) => id === timer.task);
-    tasks.push(task || [timer.task, '', timer.taskName || '自定义任务']);
+    tasks.push(timer.taskName ? [timer.task, '', timer.taskName] : task || [timer.task, '', '自定义任务']);
   }
   taskSelect.replaceChildren(...tasks.map(([id, , name]) => new Option(name, id)));
   const selected = timer?.task || previous;

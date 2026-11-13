@@ -118,7 +118,7 @@ function commit(next) {
 function changeDay(change, key = current) {
   try {
     const next = loadDays();
-    next[key] = change(next[key] || {});
+    next[key] = change(next[key] || {}, next);
     commit(next);
     return true;
   } catch {
@@ -128,8 +128,8 @@ function changeDay(change, key = current) {
   }
 }
 
-function renderProgress(day) {
-  const { done, total, percent } = completion(day);
+function renderProgress() {
+  const { done, total, percent } = completion(current, days);
   byId('progress').textContent = `${percent}%`;
   byId('bar').style.width = `${percent}%`;
   byId('progress-track').setAttribute('aria-valuenow', percent);
@@ -140,31 +140,40 @@ function renderProgress(day) {
 
 const escapeHtml = value => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 
-function taskSection(title, number, tasks, day, editable = false) {
+function taskSection(title, number, tasks, day, taskDetails, editable) {
   const items = tasks.map(([id, time, name, description]) => {
-    if (!id) return `<li class="rest"><span class="time">${time}</span><span>${name}</span></li>`;
+    const actions = editable ? `<div class="task-actions"><button type="button" data-edit-task="${id}" aria-haspopup="dialog" aria-label="编辑 ${escapeHtml(name)}">编辑</button><button type="button" data-delete-task="${id}" aria-label="删除 ${escapeHtml(name)}">删除</button></div>` : '';
+    if (taskDetails[id].rest) return `<li><div class="rest"><span class="time">${time}</span><span>${escapeHtml(name)}</span></div>${actions}</li>`;
     const checked = day.checked?.[id] ? 'checked' : '';
     return `<li><label class="task">
       <input type="checkbox" data-task="${id}" aria-labelledby="task-${id}" ${checked}>
       <span class="check" aria-hidden="true">✓</span>
       <span class="taskbody"><span class="taskname" id="task-${id}">${escapeHtml(name)}</span>${description ? `<span class="taskdesc">${escapeHtml(description)}</span>` : ''}</span>
       <span class="time">${time}</span>
-    </label>${editable ? `<div class="task-actions"><button type="button" data-edit-task="${id}" aria-haspopup="dialog" aria-label="编辑 ${escapeHtml(name)}">编辑</button><button type="button" data-delete-task="${id}" aria-label="删除 ${escapeHtml(name)}">删除</button></div>` : ''}</li>`;
+    </label>${actions}</li>`;
   });
   return `<section class="task-group"><h3><span>${number}</span>${escapeHtml(title)}</h3><ol>${items.join('')}</ol></section>`;
 }
 
 function renderPlan(day) {
   const mode = modeOf(day);
-  for (const button of modeButtons) button.setAttribute('aria-pressed', button.dataset.mode === mode);
-  byId('mode-hint').textContent = { lecture: '理解新知识，复现例题，少量练习。', practice: '回顾已学知识，独立做题，整理错题。', custom: '为所选日期安排任务。' }[mode];
-  byId('task-add').hidden = mode !== 'custom';
-  byId('progress-mode').textContent = mode === 'custom' ? '自定义计划' : '数学 · 英语一';
-  byId('plan-window').textContent = mode === 'custom' ? '按你的节奏' : '14:30–22:30';
-  list.innerHTML = mode === 'custom' ? (customGroups(day).map(([title, tasks], index) =>
-    taskSection(title, String(index + 1).padStart(2, '0'), tasks, day, true)).join('') ||
-    '<p class="custom-empty">这一天还没有自定义任务。</p>') : taskSection('下午 · 高数', '01', mathTasks(day), day) +
-    taskSection('晚上 · 英语一', '02', english, day) + taskSection('晚间 · 复盘与收尾', '03', review, day);
+  const isCustom = mode === 'custom';
+  const editable = isCustom || current === today;
+  for (const button of modeButtons) {
+    const id = button.dataset.mode;
+    button.setAttribute('aria-pressed', id === mode);
+    if (id !== 'custom') button.textContent = routineOn(id, current, days).name;
+  }
+  byId('mode-hint').textContent = isCustom ? '仅为所选日期安排任务。' :
+    editable ? '常规计划可以重复使用，修改从今天起生效。' : '回到今天可修改常规计划。';
+  byId('task-add').hidden = !editable;
+  byId('routine-name').hidden = isCustom || !editable;
+  byId('progress-mode').textContent = isCustom ? '自定义计划' : routineOn(mode, current, days).name;
+  byId('plan-window').textContent = isCustom ? '单日安排' : '可复用计划';
+  const taskDetails = tasksOn(current, days);
+  list.innerHTML = taskGroups(taskDetails).map(([title, tasks], index) =>
+    taskSection(title, String(index + 1).padStart(2, '0'), tasks, day, taskDetails, editable)).join('') ||
+    '<p class="custom-empty">这份计划还没有任务。</p>';
   document.dispatchEvent(new Event('study-plan-change'));
 }
 
@@ -188,7 +197,7 @@ function renderHistory() {
   const rows = [];
   for (let offset = -6; offset <= 0; offset++) {
     const key = moveDay(today, offset);
-    const { done, total, percent } = completion(days[key]);
+    const { done, total, percent } = completion(key, days);
     const date = offset === 0 ? '今天' : shortDate.format(dateAtNoon(key));
     const minutes = focusMinutes(focusSeconds(days[key]));
     rows.push(`<li><button class="history-day" type="button" data-date="${key}" aria-current="${key === current ? 'date' : 'false'}" aria-label="${key}，完成 ${done} / ${total} 项，${percent}%，专注 ${minutes} 分钟">
@@ -236,7 +245,7 @@ function render() {
   dateDisplay.textContent = current.replaceAll('-', '.');
   byId('prev').disabled = current === dateField.min;
   byId('next').disabled = current === dateField.max;
-  renderProgress(day);
+  renderProgress();
   renderPlan(day);
   for (const field of fields) byId(field).value = day[field] ?? '';
   byId('field-error').hidden = true;
@@ -280,7 +289,7 @@ for (const button of modeButtons) {
     if (mode === modeOf(days[current])) return;
     if (changeDay(day => ({ ...day, mode }))) {
       renderPlan(days[current]);
-      renderProgress(days[current]);
+      renderProgress();
       renderHistory();
     }
   });
@@ -291,7 +300,7 @@ list.addEventListener('change', event => {
   const id = input.dataset.task;
   if (!id) return;
   if (changeDay(day => ({ ...day, checked: { ...day.checked, [id]: input.checked } }))) {
-    renderProgress(days[current]);
+    renderProgress();
     renderHistory();
   } else {
     input.checked = !input.checked;
@@ -332,7 +341,8 @@ byId('reset').addEventListener('click', () => {
   if (!confirm(`清空 ${current} 的学习记录和打卡状态？`)) return;
   try {
     const next = loadDays();
-    delete next[current];
+    if (next[current]?.routinePlans) next[current] = { routinePlans: next[current].routinePlans };
+    else delete next[current];
     commit(next);
     render();
     toast('已清空所选日期');
@@ -343,11 +353,12 @@ byId('reset').addEventListener('click', () => {
 
 byId('share').addEventListener('click', async () => {
   const day = days[current] || {};
-  const tasks = studyTasks(day).map(([id, time, name]) => `${day.checked?.[id] ? '☑' : '☐'} ${time} ${name}`);
+  const tasks = studyTasks(current, days).map(([id, time, name]) => `${day.checked?.[id] ? '☑' : '☐'} ${time} ${name}`);
   const notes = [day.mathnote, day.engnote, day.summary, day.tomorrow];
   const labels = ['高数记录', '英语记录', '当日总结', '次日计划'];
   const title = `考研打卡 · ${current}`;
-  const text = [title, { lecture: '网课日', practice: '巩固日', custom: '自定义' }[modeOf(day)], ...tasks, '',
+  const mode = modeOf(day);
+  const text = [title, mode === 'custom' ? '自定义' : routineOn(mode, current, days).name, ...tasks, '',
     ...notes.map((note, i) => `${labels[i]}：${note || '—'}`)].join('\n');
   try {
     if (navigator.share) {
@@ -417,6 +428,10 @@ backupFile.addEventListener('change', async () => {
     if (!confirm(`导入 ${keys.length} 天的记录？这将覆盖 ${overlaps} 天的同日期记录，其余日期会保留。`)) {
       backupMessage('已取消导入。');
       return;
+    }
+    for (const key of keys) {
+      if (!existing[key]?.routinePlans) continue;
+      incoming[key].routinePlans = { ...existing[key].routinePlans, ...incoming[key].routinePlans };
     }
     commit({ ...existing, ...incoming });
     render();

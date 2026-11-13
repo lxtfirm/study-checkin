@@ -1,9 +1,10 @@
 const taskEditor = byId('task-editor');
 const taskDialog = byId('task-dialog');
+const routineDialog = byId('routine-dialog');
 const courseDialog = byId('course-dialog');
 const courseList = byId('custom-courses');
 const customCourseForm = byId('custom-course-form');
-let editedTask, taskEditorDate, editedCourse, courseEditorDate;
+let editedTask, taskEditorDate, editorMode, editedCourse, courseEditorDate;
 
 function editorError(id, message = '') {
   const output = byId(id);
@@ -11,7 +12,7 @@ function editorError(id, message = '') {
   output.hidden = !message;
 }
 
-for (const dialog of [taskDialog, courseDialog]) {
+for (const dialog of [taskDialog, courseDialog, routineDialog]) {
   dialog.addEventListener('click', event => {
     if (event.target !== dialog) return;
     const bounds = dialog.getBoundingClientRect();
@@ -20,13 +21,45 @@ for (const dialog of [taskDialog, courseDialog]) {
   });
 }
 
+function changeRoutine(mode, update) {
+  if (current !== today || today !== localDay()) return false;
+  return changeDay((day, records) => ({
+    ...day, routinePlans: {
+      ...day.routinePlans,
+      [mode]: update(routineOn(mode, today, records)),
+    },
+  }), today);
+}
+
+byId('routine-name').addEventListener('click', () => {
+  editorMode = modeOf(days[current]);
+  byId('routine-name-input').value = routineOn(editorMode, current, days).name;
+  editorError('routine-message');
+  routineDialog.showModal();
+});
+byId('routine-cancel').addEventListener('click', () => routineDialog.close());
+byId('routine-editor').addEventListener('submit', event => {
+  event.preventDefault();
+  const name = byId('routine-name-input').value.trim();
+  if (!validRoutineName(name)) return editorError('routine-message', '请输入 1–16 个字的计划名称。');
+  if (!changeRoutine(editorMode, plan => ({ ...plan, name }))) return editorError('routine-message', '未能保存名称，请返回今天后重试。');
+  routineDialog.close();
+  render();
+  toast('计划名称已保存');
+});
+
 function openTaskEditor(id) {
-  const task = days[current]?.tasks?.[id];
+  const task = tasksOn(current, days)?.[id];
+  editorMode = modeOf(days[current]);
   editedTask = id;
   taskEditorDate = current;
   taskEditor.reset();
   byId('task-dialog-title').textContent = byId('task-submit').textContent = task ? '编辑任务' : '添加任务';
-  byId('task-dialog-date').textContent = `${current.replaceAll('-', '.')} · 自定义任务`;
+  const custom = editorMode === 'custom';
+  byId('task-dialog-date').textContent = custom ? `${current.replaceAll('-', '.')} · 自定义任务` :
+    `${routineOn(editorMode, current, days).name} · 从今天起生效`;
+  byId('task-kind').hidden = custom;
+  byId('task-rest').checked = !!task?.rest;
   for (const [field, key] of Object.entries({ name: 'name', description: 'description', time: 'time', end: 'end', period: 'period', subject: 'subject' })) {
     byId(`task-${field}`).value = task?.[key] || '';
   }
@@ -37,7 +70,8 @@ function openTaskEditor(id) {
 byId('task-add').addEventListener('click', () => openTaskEditor());
 byId('task-cancel').addEventListener('click', () => taskDialog.close());
 document.addEventListener('study-plan-change', () => {
-  if (taskDialog.open && (taskEditorDate !== current || modeOf(days[current]) !== 'custom')) taskDialog.close();
+  if (taskDialog.open && (taskEditorDate !== current || modeOf(days[current]) !== editorMode)) taskDialog.close();
+  if (routineDialog.open && (current !== today || modeOf(days[current]) !== editorMode)) routineDialog.close();
 });
 
 taskEditor.addEventListener('submit', event => {
@@ -54,7 +88,12 @@ taskEditor.addEventListener('submit', event => {
   }
   if (!validCustomTask(task)) return editorError('task-message', '请填写有效的任务标题和内容。');
   const id = editedTask || `t-${crypto.randomUUID()}`;
-  if (!changeDay(day => ({ ...day, tasks: { ...day.tasks, [id]: task } }), taskEditorDate)) {
+  const saved = editorMode === 'custom' ?
+    changeDay(day => ({ ...day, tasks: { ...day.tasks, [id]: task } }), taskEditorDate) :
+    changeRoutine(editorMode, plan => ({
+      ...plan, tasks: { ...plan.tasks, [id]: { ...task, rest: byId('task-rest').checked } },
+    }));
+  if (!saved) {
     return editorError('task-message', '任务未保存，请检查设备存储空间。');
   }
   taskDialog.close();
@@ -67,16 +106,22 @@ list.addEventListener('click', event => {
   const button = event.target.closest('[data-edit-task], [data-delete-task]');
   if (!button) return;
   const id = button.dataset.editTask || button.dataset.deleteTask;
-  const task = days[current]?.tasks?.[id];
+  const mode = modeOf(days[current]);
+  const task = tasksOn(current, days)?.[id];
   if (!task) return;
   if (button.dataset.editTask) return openTaskEditor(id);
-  if (!confirm(`删除「${task.name}」？`)) return;
-  if (!changeDay(day => {
+  if (!confirm(`删除「${task.name}」？${mode === 'custom' ? '' : '从今天起生效。'}`)) return;
+  const saved = mode !== 'custom' ? changeRoutine(mode, plan => {
+    const tasks = { ...plan.tasks };
+    delete tasks[id];
+    return { ...plan, tasks };
+  }) : changeDay(day => {
     const tasks = { ...day.tasks }, checked = { ...day.checked };
     delete tasks[id];
     delete checked[id];
     return { ...day, tasks, checked };
-  })) return;
+  });
+  if (!saved) return;
   render();
   byId('task-add').focus({ preventScroll: true });
 });
@@ -176,6 +221,7 @@ courseList.addEventListener('click', event => {
 for (const eventName of ['popstate', 'hashchange']) {
   window.addEventListener(eventName, () => {
     if (taskDialog.open && location.hash && location.hash !== '#tasks') taskDialog.close();
+    if (routineDialog.open && location.hash && location.hash !== '#tasks') routineDialog.close();
     if (courseDialog.open && location.hash !== '#course') courseDialog.close();
   });
 }
