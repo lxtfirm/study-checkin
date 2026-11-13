@@ -5,6 +5,100 @@ const courseDialog = byId('course-dialog');
 const courseList = byId('custom-courses');
 const customCourseForm = byId('custom-course-form');
 let editedTask, taskEditorDate, editorMode, editedCourse, courseEditorDate;
+let openSwipeRow, swipeGesture, swipedRow;
+
+function setSwipeRow(row, open = false) {
+  if (open && openSwipeRow && openSwipeRow !== row) setSwipeRow(openSwipeRow);
+  row.classList.toggle('is-open', open);
+  row.querySelector('.swipe-actions').inert = !open;
+  row.querySelector('.swipe-more').setAttribute('aria-expanded', String(open));
+  if (open) openSwipeRow = row;
+  else if (openSwipeRow === row) openSwipeRow = null;
+}
+
+list.addEventListener('pointerdown', event => {
+  if (!event.isPrimary || event.button !== 0 || event.pointerType === 'mouse') return;
+  const front = event.target.closest('.swipe-front');
+  if (!front || event.target.closest('button')) return;
+  const row = front.closest('.swipe-row');
+  swipeGesture = {
+    front, row, id: event.pointerId, x: event.clientX, y: event.clientY,
+    width: row.querySelector('.swipe-actions').offsetWidth, wasOpen: row === openSwipeRow,
+  };
+});
+
+list.addEventListener('pointermove', event => {
+  const gesture = swipeGesture;
+  if (!gesture || event.pointerId !== gesture.id) return;
+  const { row, front, width, wasOpen } = gesture;
+  const dx = event.clientX - gesture.x;
+  const dy = event.clientY - gesture.y;
+  if (!gesture.dragging) {
+    if (Math.abs(dy) > 8 && Math.abs(dy) >= Math.abs(dx)) {
+      swipeGesture = null;
+      return;
+    }
+    if (Math.abs(dx) < 10 || Math.abs(dx) <= Math.abs(dy) * 1.25 || (!wasOpen && dx > 0)) return;
+    gesture.dragging = true;
+    row.classList.add('is-dragging');
+    front.setPointerCapture(event.pointerId);
+  }
+  const offset = Math.min(0, Math.max(-width, (wasOpen ? -width : 0) + dx));
+  row.style.setProperty('--swipe-offset', `${offset}px`);
+});
+
+function finishSwipe(event) {
+  const gesture = swipeGesture;
+  if (!gesture || event.pointerId !== gesture.id) return;
+  if (event.type === 'lostpointercapture' && event.target !== gesture.front) return;
+  swipeGesture = null;
+  if (!gesture.dragging) return;
+  const { row, front, wasOpen, width } = gesture;
+  const dx = event.clientX - gesture.x;
+  const threshold = width / 3;
+  const open = event.type !== 'pointerup' ? wasOpen : wasOpen ? dx < threshold : dx <= -threshold;
+  swipedRow = row;
+  if (front.hasPointerCapture(gesture.id)) front.releasePointerCapture(gesture.id);
+  setSwipeRow(row, open);
+  row.classList.remove('is-dragging');
+  row.style.removeProperty('--swipe-offset');
+}
+
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) list.addEventListener(type, finishSwipe);
+
+document.addEventListener('pointerdown', event => {
+  if (!event.isPrimary) return;
+  swipedRow = null;
+  if (openSwipeRow && !openSwipeRow.contains(event.target)) setSwipeRow(openSwipeRow);
+}, true);
+
+list.addEventListener('click', event => {
+  const row = event.target.closest('.swipe-row');
+  if (!row) return;
+  if (row === swipedRow || (row === openSwipeRow && event.target.closest('.task, .rest'))) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (row !== swipedRow) setSwipeRow(row);
+    swipedRow = null;
+  }
+}, true);
+
+list.addEventListener('click', event => {
+  const more = event.target.closest('.swipe-more');
+  if (!more) return;
+  const row = more.closest('.swipe-row');
+  const open = row !== openSwipeRow;
+  setSwipeRow(row, open);
+  if (open) row.querySelector('[data-edit-task]').focus({ preventScroll: true });
+});
+
+list.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !openSwipeRow) return;
+  const more = openSwipeRow.querySelector('.swipe-more');
+  setSwipeRow(openSwipeRow);
+  more.focus({ preventScroll: true });
+  event.preventDefault();
+});
 
 function editorError(id, message = '') {
   const output = byId(id);
@@ -70,6 +164,7 @@ function openTaskEditor(id) {
 byId('task-add').addEventListener('click', () => openTaskEditor());
 byId('task-cancel').addEventListener('click', () => taskDialog.close());
 document.addEventListener('study-plan-change', () => {
+  openSwipeRow = swipeGesture = swipedRow = null;
   if (taskDialog.open && (taskEditorDate !== current || modeOf(days[current]) !== editorMode)) taskDialog.close();
   if (routineDialog.open && (current !== today || modeOf(days[current]) !== editorMode)) routineDialog.close();
 });
@@ -98,7 +193,8 @@ taskEditor.addEventListener('submit', event => {
   }
   taskDialog.close();
   render();
-  (editedTask ? list.querySelector(`[data-edit-task="${id}"]`) : byId('task-add'))?.focus({ preventScroll: true });
+  (editedTask ? list.querySelector(`[data-edit-task="${id}"]`)?.closest('.swipe-row').querySelector('.swipe-more') :
+    byId('task-add'))?.focus({ preventScroll: true });
   toast(editedTask ? '任务已更新' : '任务已添加');
 });
 

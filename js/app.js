@@ -142,15 +142,23 @@ const escapeHtml = value => value.replace(/[&<>"']/g, character => ({ '&': '&amp
 
 function taskSection(title, number, tasks, day, taskDetails, editable) {
   const items = tasks.map(([id, time, name, description]) => {
-    const actions = editable ? `<div class="task-actions"><button type="button" data-edit-task="${id}" aria-haspopup="dialog" aria-label="编辑 ${escapeHtml(name)}">编辑</button><button type="button" data-delete-task="${id}" aria-label="删除 ${escapeHtml(name)}">删除</button></div>` : '';
-    if (taskDetails[id].rest) return `<li><div class="rest"><span class="time">${time}</span><span>${escapeHtml(name)}</span></div>${actions}</li>`;
+    const nameHtml = escapeHtml(name);
+    const wrap = content => editable ? `<li class="swipe-row">
+      <div class="swipe-actions" id="task-actions-${id}" inert>
+        <button type="button" data-edit-task="${id}" aria-haspopup="dialog" aria-label="编辑 ${nameHtml}">编辑</button>
+        <button type="button" data-delete-task="${id}" aria-label="删除 ${nameHtml}">删除</button>
+      </div>
+      <div class="swipe-front">${content}<button class="swipe-more" type="button" aria-expanded="false"
+        aria-controls="task-actions-${id}" aria-label="${nameHtml}的任务操作">···</button></div>
+    </li>` : `<li>${content}</li>`;
+    if (taskDetails[id].rest) return wrap(`<div class="rest"><span class="time">${time}</span><span>${nameHtml}</span></div>`);
     const checked = day.checked?.[id] ? 'checked' : '';
-    return `<li><label class="task">
+    return wrap(`<label class="task">
       <input type="checkbox" data-task="${id}" aria-labelledby="task-${id}" ${checked}>
       <span class="check" aria-hidden="true">✓</span>
       <span class="taskbody"><span class="taskname" id="task-${id}">${escapeHtml(name)}</span>${description ? `<span class="taskdesc">${escapeHtml(description)}</span>` : ''}</span>
       <span class="time">${time}</span>
-    </label>${actions}</li>`;
+    </label>`);
   });
   return `<section class="task-group"><h3><span>${number}</span>${escapeHtml(title)}</h3><ol>${items.join('')}</ol></section>`;
 }
@@ -159,6 +167,7 @@ function renderPlan(day) {
   const mode = modeOf(day);
   const isCustom = mode === 'custom';
   const editable = isCustom || current === today;
+  byId('task-swipe-hint').hidden = !editable;
   for (const button of modeButtons) {
     const id = button.dataset.mode;
     button.setAttribute('aria-pressed', id === mode);

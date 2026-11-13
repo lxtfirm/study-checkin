@@ -130,6 +130,28 @@ main { min-width: 0; }
 .task-group h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 15px; }
 .task-group h3 span { color: var(--blue); background: var(--soft); border-radius: 7px; padding: 2px 6px; font-size: 11px; font-variant-numeric: tabular-nums; }
 .task-group li + li { margin-top: 6px; }
+.swipe-hint { display: none; }
+.swipe-row { --swipe-width: 120px; position: relative; isolation: isolate; overflow: hidden; border-radius: 14px; box-shadow: var(--shadow); touch-action: pan-y pinch-zoom; }
+.swipe-front { position: relative; min-width: 0; background: var(--surface); transform: translateX(var(--swipe-offset, 0px)); transition: transform .18s ease-out; }
+.swipe-row.is-open { --swipe-offset: calc(-1 * var(--swipe-width)); }
+.swipe-row.is-dragging .swipe-front { transition: none; }
+.swipe-row .task { box-shadow: none; }
+.swipe-row .task:focus-within { outline-offset: -3px; }
+.swipe-row .rest { min-height: 44px; overflow-wrap: anywhere; }
+.swipe-actions { position: absolute; inset: 0 0 0 auto; width: var(--swipe-width); display: grid; grid-template-columns: repeat(2, 1fr); visibility: hidden; transition: visibility .18s; }
+.swipe-row:is(.is-open, .is-dragging) .swipe-actions { visibility: visible; transition: none; }
+.swipe-actions button { border: 0; background: #315f96; color: #fff; font-size: 13px; font-weight: 650; }
+.swipe-actions button:last-child { background: #bb3838; }
+.swipe-actions button:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+.swipe-more { position: absolute; top: 50%; right: 0; transform: translateY(-50%); width: 44px; height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--blue); font-weight: 750; }
+.swipe-front > :is(.task, .rest) { padding-right: 49px; }
+@media (pointer: coarse) {
+  .swipe-hint { display: block; }
+  .swipe-more:not(:focus-visible) { opacity: 0; pointer-events: none; }
+  .swipe-front > :is(.task, .rest) { padding-right: 10px; }
+  .swipe-more:focus-visible { background: var(--surface); }
+}
+@media (prefers-reduced-motion: reduce) { .swipe-front { transition: none; } }
 .task {
   position: relative;
   display: grid;
