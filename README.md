@@ -53,7 +53,7 @@
 - **静态发布**：Fork 仓库后，在 GitHub 的 **Settings → Pages** 中选择从分支发布，使用 `main` 和 `/(root)`。发布后从 Pages 设置打开 HTTPS 地址。
 - **部署后台推送**：需要 Node.js 24 及以上版本、HTTPS 和同站点的 API 转发。SQLite 文件在服务启动时创建。按[后端部署指南](backend/README.md)操作，并为自己的站点生成连接码。
 
-开发时可在 `backend` 目录运行 `npm ci` 和 `npm test`，验证提醒调度、取消和重启恢复。更新离线缓存中的文件时，请同步递增 `sw.js` 的缓存版本。
+开发时可在 `backend` 目录运行 `npm ci` 和 `npm test`，验证提醒调度、取消和重启恢复。发布新版时，同步更新 `sw.js` 的缓存版本和 `index.html` 中 `release-dialog` 的版本编号与公告内容。每个浏览器打开新版时会弹出公告，确认后仍可从页脚回看。
 
 ## 反馈与参与
 

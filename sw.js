@@ -1,5 +1,5 @@
-// Bump the version whenever a cached app file changes.
-const version = 'v15';
+// Update the version and release dialog in index.html with each user-facing release.
+const version = 'v16';
 const base = self.registration.scope;
 const prefix = `study-checkin:${base}:`;
 const cacheName = prefix + version;

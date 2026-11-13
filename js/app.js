@@ -479,6 +479,17 @@ render();
 renderRoute();
 renderExamCountdown();
 
+const releaseDialog = byId('release-dialog');
+const releaseSeenKey = `${storageKey}:release-seen`;
+const releaseVersion = releaseDialog.dataset.release;
+byId('release-open').addEventListener('click', () => releaseDialog.showModal());
+releaseDialog.addEventListener('close', () => {
+  try { localStorage.setItem(releaseSeenKey, releaseVersion); } catch { /* The notice can still be dismissed. */ }
+});
+try {
+  if (localStorage.getItem(releaseSeenKey) !== releaseVersion) releaseDialog.showModal();
+} catch { /* The notice remains available from the footer. */ }
+
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {
     const update = byId('update');

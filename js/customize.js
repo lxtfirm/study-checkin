@@ -24,6 +24,7 @@ list.addEventListener('pointerdown', event => {
   swipeGesture = {
     front, row, id: event.pointerId, x: event.clientX, y: event.clientY,
     width: row.querySelector('.swipe-actions').offsetWidth, wasOpen: row === openSwipeRow,
+    previousX: event.clientX, previousTime: event.timeStamp, velocity: 0, frame: 0,
   };
 });
 
@@ -38,13 +39,20 @@ list.addEventListener('pointermove', event => {
       swipeGesture = null;
       return;
     }
-    if (Math.abs(dx) < 10 || Math.abs(dx) <= Math.abs(dy) * 1.25 || (!wasOpen && dx > 0)) return;
+    if (Math.abs(dx) < 7 || Math.abs(dx) <= Math.abs(dy) * 1.2 || (!wasOpen && dx > 0)) return;
     gesture.dragging = true;
     row.classList.add('is-dragging');
     front.setPointerCapture(event.pointerId);
   }
-  const offset = Math.min(0, Math.max(-width, (wasOpen ? -width : 0) + dx));
-  row.style.setProperty('--swipe-offset', `${offset}px`);
+  const elapsed = event.timeStamp - gesture.previousTime;
+  if (elapsed > 0) gesture.velocity = (event.clientX - gesture.previousX) / elapsed;
+  gesture.previousX = event.clientX;
+  gesture.previousTime = event.timeStamp;
+  gesture.offset = Math.min(0, Math.max(-width, (wasOpen ? -width : 0) + dx));
+  if (!gesture.frame) gesture.frame = requestAnimationFrame(() => {
+    gesture.frame = 0;
+    front.style.transform = `translate3d(${gesture.offset}px, 0, 0)`;
+  });
 });
 
 function finishSwipe(event) {
@@ -55,13 +63,16 @@ function finishSwipe(event) {
   if (!gesture.dragging) return;
   const { row, front, wasOpen, width } = gesture;
   const dx = event.clientX - gesture.x;
-  const threshold = width / 3;
+  cancelAnimationFrame(gesture.frame);
+  const velocity = event.timeStamp - gesture.previousTime < 90 ? gesture.velocity : 0;
+  const quickSwipe = Math.abs(dx) >= 15 && Math.abs(velocity) > .25 && Math.sign(velocity) === Math.sign(dx);
+  const threshold = quickSwipe ? 15 : width / 3;
   const open = event.type !== 'pointerup' ? wasOpen : wasOpen ? dx < threshold : dx <= -threshold;
   swipedRow = row;
   if (front.hasPointerCapture(gesture.id)) front.releasePointerCapture(gesture.id);
   setSwipeRow(row, open);
   row.classList.remove('is-dragging');
-  row.style.removeProperty('--swipe-offset');
+  front.style.removeProperty('transform');
 }
 
 for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) list.addEventListener(type, finishSwipe);
@@ -75,10 +86,11 @@ document.addEventListener('pointerdown', event => {
 list.addEventListener('click', event => {
   const row = event.target.closest('.swipe-row');
   if (!row) return;
-  if (row === swipedRow || (row === openSwipeRow && event.target.closest('.task, .rest'))) {
+  const followedSwipe = event.detail > 0 && row === swipedRow;
+  if (followedSwipe || (row === openSwipeRow && event.target.closest('.task, .rest'))) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (row !== swipedRow) setSwipeRow(row);
+    if (!followedSwipe) setSwipeRow(row);
     swipedRow = null;
   }
 }, true);
@@ -164,6 +176,7 @@ function openTaskEditor(id) {
 byId('task-add').addEventListener('click', () => openTaskEditor());
 byId('task-cancel').addEventListener('click', () => taskDialog.close());
 document.addEventListener('study-plan-change', () => {
+  if (swipeGesture?.frame) cancelAnimationFrame(swipeGesture.frame);
   openSwipeRow = swipeGesture = swipedRow = null;
   if (taskDialog.open && (taskEditorDate !== current || modeOf(days[current]) !== editorMode)) taskDialog.close();
   if (routineDialog.open && (current !== today || modeOf(days[current]) !== editorMode)) routineDialog.close();

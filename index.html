@@ -247,9 +247,18 @@
           </div>
         </details>
     </main>
-    <footer>考研打卡 · 2028</footer>
+    <footer>考研打卡 · 2028 <button class="release-link" id="release-open" type="button" aria-haspopup="dialog">更新公告</button></footer>
   </div>
   <div class="toast" id="toast" role="status"></div>
+  <dialog class="edit-sheet release-note" id="release-dialog" data-release="v16" aria-labelledby="release-title">
+    <p class="release-version">版本更新 · v16</p>
+    <h2 id="release-title" tabindex="-1" autofocus>考研打卡更新公告</h2>
+    <ul>
+      <li>任务卡片左滑更跟手，快速轻扫也能展开「编辑」和「删除」。</li>
+      <li>以后发布新版时，打开新版即可看到本次更新内容。</li>
+    </ul>
+    <form method="dialog"><button class="btn">知道了</button></form>
+  </dialog>
   <dialog class="edit-sheet" id="routine-dialog" aria-labelledby="routine-dialog-title">
     <h2 id="routine-dialog-title" tabindex="-1" autofocus>改计划名称</h2>
     <p class="hint">名称和任务清单从今天起沿用，历史记录保留原样。</p>

@@ -132,9 +132,9 @@ main { min-width: 0; }
 .task-group li + li { margin-top: 6px; }
 .swipe-hint { display: none; }
 .swipe-row { --swipe-width: 120px; position: relative; isolation: isolate; overflow: hidden; border-radius: 14px; box-shadow: var(--shadow); touch-action: pan-y pinch-zoom; }
-.swipe-front { position: relative; min-width: 0; background: var(--surface); transform: translateX(var(--swipe-offset, 0px)); transition: transform .18s ease-out; }
+.swipe-front { position: relative; min-width: 0; background: var(--surface); transform: translate3d(var(--swipe-offset, 0px), 0, 0); transition: transform .2s cubic-bezier(.2, .75, .3, 1); }
 .swipe-row.is-open { --swipe-offset: calc(-1 * var(--swipe-width)); }
-.swipe-row.is-dragging .swipe-front { transition: none; }
+.swipe-row.is-dragging .swipe-front { transition: none; will-change: transform; }
 .swipe-row .task { box-shadow: none; }
 .swipe-row .task:focus-within { outline-offset: -3px; }
 .swipe-row .rest { min-height: 44px; overflow-wrap: anywhere; }
@@ -381,6 +381,11 @@ body:has(.study-dock[data-section="focus"]) { --mini-height: 0px; }
 .edit-sheet::backdrop { background: #17253659; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 .edit-sheet h2 { font-size: 20px; }
 .edit-sheet h2:focus { outline: none; }
+.release-link { display: inline-flex; align-items: center; min-height: 44px; margin-left: 4px; padding: 0 8px; border: 0; background: transparent; color: var(--blue); font-size: inherit; }
+.release-version { color: var(--blue); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.release-note ul { padding-left: 1.35em; margin: 12px 0 18px; color: var(--muted); }
+.release-note li + li { margin-top: 8px; }
+.release-note form .btn { width: 100%; }
 .edit-sheet .editor { gap: 11px; margin-bottom: 0; }
 .edit-sheet .editor label > :is(input, select) { margin-top: 3px; font-weight: 400; }
 .edit-sheet .editor .task-kind { display: flex; align-items: center; gap: 8px; min-height: 44px; }
